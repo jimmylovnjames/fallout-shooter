@@ -7,7 +7,7 @@ Device numbers are filled in when the director runs the in-app benchmark (docs/P
 
 ### Added
 - Design docs: `docs/DESIGN.md` (architecture, data schemas, scene tree, budgets, risks),
-  `docs/ROADMAP.md`, `docs/DECISIONS.md` (D001–D026), `docs/ASSETS.md`, `docs/PERF.md`, `CLAUDE.md`.
+  `docs/ROADMAP.md`, `docs/DECISIONS.md` (D001–D027), `docs/ASSETS.md`, `docs/PERF.md`, `CLAUDE.md`.
 - Godot 4.7.2 project: Mobile renderer with GLES3 fallback, Jolt physics, ETC2/ASTC import,
   1280×720 canvas_items/expand scaling, sensor-landscape, typed GDScript enforced (untyped = error),
   physics layer names, audio bus layout (Master/Music/SFX/Ambience/UI/Voice), CSV localisation.
