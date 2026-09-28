@@ -1,0 +1,75 @@
+; Engine configuration file.
+; Hand-maintained: keep sections sorted as Godot writes them. See docs/DECISIONS.md for why each
+; non-default value is set.
+
+config_version=5
+
+[application]
+
+config/name="WASTELAND (working title)"
+config/description="Top-down open-world post-apocalyptic RPG shooter."
+config/version="0.0.0-dev"
+run/main_scene="res://src/main/main.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+run/max_fps=60
+config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
+[autoload]
+
+EventBus="*res://src/autoload/event_bus.gd"
+Settings="*res://src/autoload/settings.gd"
+GameState="*res://src/autoload/game_state.gd"
+SaveManager="*res://src/autoload/save_manager.gd"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_call_argument=1
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+
+theme/custom_font=""
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://translations/strings.en.translation")
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="actors"
+3d_physics/layer_4="hurtbox"
+3d_physics/layer_5="projectile"
+3d_physics/layer_6="interactable"
+3d_physics/layer_7="cover"
+3d_physics/layer_8="trigger"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+rendering_device/fallback_to_opengl3=true
+textures/vram_compression/import_etc2_astc=true
+textures/vram_compression/import_s3tc_bptc=true
+lights_and_shadows/directional_shadow/size.mobile=2048

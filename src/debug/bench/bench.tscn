@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/debug/bench/bench.gd" id="1_bench"]
+[ext_resource type="Environment" path="res://src/world/environments/wasteland_day.tres" id="2_env"]
+[ext_resource type="Script" path="res://src/world/environments/sun_rig.gd" id="3_sun"]
+[ext_resource type="Script" path="res://src/world/camera/top_down_camera.gd" id="4_cam"]
+
+[node name="Bench" type="Node3D"]
+script = ExtResource("1_bench")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+script = ExtResource("3_sun")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+current = true
+script = ExtResource("4_cam")
+
+[node name="StageRoot" type="Node3D" parent="."]

@@ -1,0 +1,14 @@
+keys,en
+APP_TITLE,WASTELAND
+UI_PRESET_LOW,Low
+UI_PRESET_MEDIUM,Medium
+UI_PRESET_HIGH,High
+UI_PRESET_ULTRA,Ultra
+UI_RENDER_SCALE,Render scale
+UI_RUN_BENCH,Run benchmark
+UI_TOGGLE_HUD,Perf HUD
+UI_BENCH_RUNNING,Benchmark running…
+UI_BENCH_DONE,Benchmark complete
+UI_GRAPHICS,Graphics
+UI_DEV_PANEL,Dev
+UI_COPY_RESULT,Copy result

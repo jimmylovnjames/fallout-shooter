@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GraphicsPreset" format=3]
+
+[ext_resource type="Script" path="res://src/settings/graphics_preset.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"gfx_low"
+name_key = "UI_PRESET_LOW"
+sort_order = 0
+render_scale = 0.6
+upscaler = 0
+max_fps = 30
+msaa = 0
+sun_shadows = false
+shadow_size = 1024
+shadow_quality = 0
+mesh_lod_threshold = 4.0
+glow = false
+fog_detail = 0
+foliage_density = 0.3
+outlines = true

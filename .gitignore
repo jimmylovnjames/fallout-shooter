@@ -1,0 +1,21 @@
+# Godot
+.godot/
+*.translation.tmp
+/android/
+
+# Build outputs
+/build/*
+!/build/.gdignore
+
+# Never commit release signing material (DECISIONS D011)
+*.jks
+keys/release*
+*.keystore
+!keys/debug.keystore
+
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+__pycache__/

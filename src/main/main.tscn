@@ -1,0 +1,47 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/main/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://src/ui/safe_area_container.gd" id="2_safe"]
+[ext_resource type="Script" path="res://src/ui/debug/perf_hud.gd" id="3_hud"]
+[ext_resource type="Script" path="res://src/ui/debug/dev_panel.gd" id="4_dev"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="World" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="DebugLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="DebugUI" type="MarginContainer" parent="DebugLayer"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_safe")
+
+[node name="Overlay" type="Control" parent="DebugLayer/DebugUI"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="PerfHud" type="PanelContainer" parent="DebugLayer/DebugUI/Overlay"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("3_hud")
+
+[node name="DevPanel" type="PanelContainer" parent="DebugLayer/DebugUI/Overlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -440.0
+grow_horizontal = 0
+script = ExtResource("4_dev")

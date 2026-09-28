@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GraphicsPreset" format=3]
+
+[ext_resource type="Script" path="res://src/settings/graphics_preset.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"gfx_medium"
+name_key = "UI_PRESET_MEDIUM"
+sort_order = 1
+render_scale = 0.75
+upscaler = 1
+max_fps = 30
+msaa = 1
+sun_shadows = true
+shadow_size = 1024
+shadow_quality = 1
+mesh_lod_threshold = 2.0
+glow = true
+fog_detail = 1
+foliage_density = 0.6
+outlines = true
