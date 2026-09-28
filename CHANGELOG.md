@@ -23,7 +23,8 @@ Device numbers are filled in when the director runs the in-app benchmark (docs/P
   benchmark, copy result), in-app benchmark with JSON + `BENCH_RESULT` logcat line.
 - Tooling: `tools/setup_toolchain.sh`, `tools/ci.sh`, `tools/export_android.sh` (signature,
   ABI, size and SDK checks), `tools/run_bench.sh`, `tools/screenshot.sh`, `tools/check_ip.sh`,
-  `tools/release_notes.sh`; GitHub Actions workflow (APK artifact per push, Release per phase tag).
+  `tools/release_notes.sh`; exported-PCK smoke test (Linux export boots headless and must load
+  all content from the PCK); GitHub Actions workflow (APK artifact per push, Release per phase tag).
 - Tests: 66 GUT tests (unit + integration + permanent save fixture `schema_1.sav`).
 
 ### Performance (CI, lavapipe software Vulkan, Mobile renderer, High preset, 1280×720)

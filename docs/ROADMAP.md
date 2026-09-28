@@ -26,6 +26,7 @@ If a feature blows the budget it is fixed or cut, and the cut is recorded in `DE
 - [x] In-app benchmark with JSON results (+ logcat line)
 - [x] GUT vendored; unit + integration tests
 - [x] `tools/setup_toolchain.sh`, `tools/ci.sh`, `tools/export_android.sh`, `tools/run_bench.sh`, `tools/screenshot.sh`, `tools/check_ip.sh`
+- [x] Exported-PCK smoke test (ContentDB verified inside an exported build)
 - [x] GitHub Actions workflow mirroring `ci.sh`; releases on `p*` tags
 - [x] Signed debug APK, tag `p0`
 

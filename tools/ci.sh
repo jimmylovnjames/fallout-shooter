@@ -55,6 +55,18 @@ sed -n '/Run Summary/,$p' "$BUILD_DIR/test.log" | sed 's/\x1b\[[0-9;]*m//g'
 tests_line="$(sed 's/\x1b\[[0-9;]*m//g' "$BUILD_DIR/test.log" | awk '/^Tests /{t=$2} /^Passing Tests/{p=$3} /^Asserts/{a=$2} END{print p"/"t" tests, "a" asserts"}')"
 echo "- Tests: $tests_line" >> "$SUMMARY"
 
+log "Exported-PCK smoke test (Linux export runs the same PCK/remap code paths as Android)"
+rm -rf "$BUILD_DIR/linux" && mkdir -p "$BUILD_DIR/linux"
+godot_headless --export-debug "Linux Smoke" "$BUILD_DIR/linux/wasteland.x86_64" >"$BUILD_DIR/linux-export.log" 2>&1 \
+  || { tail -30 "$BUILD_DIR/linux-export.log"; die "linux smoke export failed"; }
+fail_on_godot_errors "$BUILD_DIR/linux-export.log" "linux smoke export"
+timeout 120 "$BUILD_DIR/linux/wasteland.x86_64" --headless --audio-driver Dummy --quit-after 60 >"$BUILD_DIR/pck-smoke.log" 2>&1 \
+  || { tail -30 "$BUILD_DIR/pck-smoke.log"; die "exported build crashed"; }
+fail_on_godot_errors "$BUILD_DIR/pck-smoke.log" "exported build"
+defs="$(sed -n 's/.*\[ContentDB\] loaded \([0-9]*\) defs.*/\1/p' "$BUILD_DIR/pck-smoke.log" | head -1)"
+[[ "${defs:-0}" -gt 0 ]] || die "exported build loaded no content defs"
+ok "exported build boots; ContentDB loaded $defs defs from the PCK"
+
 if [[ $EXPORT -eq 1 ]]; then
   "$ROOT/tools/export_android.sh" "$APK_PATH"
   # shellcheck disable=SC1091
