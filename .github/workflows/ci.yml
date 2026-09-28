@@ -1,13 +1,21 @@
 name: CI
 
-# Mirrors tools/ci.sh exactly (lint, IP check, import, GUT, signed APK, lavapipe screenshot + bench).
-# Every push uploads the APK as an artifact; phase tags (p0, p1, ...) also publish a Release.
+# Mirrors tools/ci.sh exactly (lint, IP check, import, GUT, PCK smoke, signed APK, lavapipe
+# screenshot + bench). Every run uploads the APK as an artifact.
+# Phase releases: either push a tag `pN`, or run this workflow manually with `release_tag: pN`
+# (creates the tag on the built commit, then publishes a Release with the APK). The manual path
+# exists because the build container's git proxy only allows branch pushes.
 on:
   push:
     branches: ["**"]
     tags: ["p*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Phase tag to create + release (e.g. p1). Empty = build only."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -22,10 +30,19 @@ jobs:
     timeout-minutes: 40
     env:
       GODOT_HOME: ${{ github.workspace }}/../godot
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || (startsWith(github.ref, 'refs/tags/p') && github.ref_name || '') }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # versionCode = commit count, versionName = git describe
+
+      - name: Create phase tag (manual release)
+        if: github.event_name == 'workflow_dispatch' && env.RELEASE_TAG != ''
+        run: |
+          [[ "$RELEASE_TAG" =~ ^p[0-9]+(\.[0-9]+)*$ ]] || { echo "release_tag must look like p1 or p1.2"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" -m "Phase $RELEASE_TAG"
 
       - uses: actions/setup-java@v6
         with:
@@ -69,14 +86,16 @@ jobs:
             build/*.log
 
       - name: Publish phase release
-        if: startsWith(github.ref, 'refs/tags/p')
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tools/release_notes.sh "$GITHUB_REF_NAME" > build/release-notes.md
-          gh release create "$GITHUB_REF_NAME" \
-            "build/wasteland-debug.apk#wasteland-${GITHUB_REF_NAME}-debug.apk" \
+          git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null || git push origin "refs/tags/$RELEASE_TAG"
+          tools/release_notes.sh "$RELEASE_TAG" > build/release-notes.md
+          gh release create "$RELEASE_TAG" \
+            "build/wasteland-debug.apk#wasteland-${RELEASE_TAG}-debug.apk" \
             build/screenshots/*.png \
-            --title "WASTELAND ${GITHUB_REF_NAME} (debug)" \
+            --verify-tag \
+            --title "WASTELAND ${RELEASE_TAG} (debug)" \
             --notes-file build/release-notes.md \
             --prerelease

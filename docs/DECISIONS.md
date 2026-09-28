@@ -104,3 +104,9 @@ final title (P7). The `.dev` suffix lets dev and release builds coexist on one p
 `effective = clamp(preset_scale × 1080 / short_side, 0.25, 1.0)`. A 1440p OnePlus 12 on High
 (0.9) renders 972 lines instead of 1296 — the same cost as a 1080p phone. Raw fractions of native
 resolution would make every preset ~1.8× more expensive on 1440p panels.
+
+**D027 — Phase tags/releases can be created by the CI workflow (`workflow_dispatch`, input `release_tag`).**
+The build container's git proxy accepts branch pushes but rejects tag pushes (observed at P0,
+repeatable). Running the workflow with `release_tag: pN` tags the exact commit it built and
+publishes the Release with the APK, so the tag always matches a green build. Pushing a `p*` tag
+from a normal git client still works too.
