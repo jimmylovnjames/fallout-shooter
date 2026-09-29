@@ -20,6 +20,19 @@ signal game_saved(slot: StringName, ok: bool)
 signal game_loaded(slot: StringName)
 signal game_state_reset
 
+# --- Player / combat -----------------------------------------------------------------------------
+signal player_spawned(player: Node3D)
+signal player_health_changed(current: float, maximum: float)
+signal player_damaged(amount: float, from_direction: Vector3)
+signal player_died
+signal player_respawned
+signal weapon_equipped(name_key: String, in_mag: int, mag_size: int)
+signal ammo_changed(in_mag: int, mag_size: int)
+signal reload_started(duration: float)
+signal enemy_killed(archetype_id: StringName)
+## A loud event AI can hear (gunshots, explosions). source_id = instance_id of the emitter.
+signal noise_made(position: Vector3, radius: float, source_id: int)
+
 # --- Debug / perf --------------------------------------------------------------------------------
 signal bench_started
 signal bench_finished(results: Dictionary)

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeDef" format=3]
+
+[ext_resource type="Script" path="res://src/actors/enemy_archetype_def.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"enm_scavenger"
+name_key = "ACTOR_SCAVENGER"
+max_hp = 60.0
+move_speed = 4.2
+acceleration = 30.0
+deceleration = 40.0
+turn_speed_deg = 540.0
+tint = Color(0.35, 0.38, 0.33, 1)
+loadout = Array[StringName]([&"wpn_scav_repeater"])
+sight_range_m = 18.0
+fov_deg = 140.0
+reaction_s = 0.45
+preferred_range_m = 9.0
+aim_error_deg = 9.0
+aim_error_min_deg = 3.5
+aim_settle_s = 2.5
+lead_skill = 0.75
+burst_shots = 3
+burst_pause_min_s = 0.8
+burst_pause_max_s = 1.5
+patrol_speed_mult = 0.45
+patrol_radius_m = 8.0
+give_up_s = 8.0

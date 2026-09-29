@@ -14,9 +14,12 @@ const _COLORS: Dictionary[Palette, Color] = {
 	Palette.DARK: Color(0.22, 0.21, 0.2),
 }
 const OUTLINE_SHADER := preload("res://src/shaders/outline_hull.gdshader")
+const OCCLUDER_SHADER := preload("res://src/shaders/world_occluder.gdshader")
 
 static var _materials: Dictionary[Palette, StandardMaterial3D] = {}
 static var _outlined: Dictionary[Palette, StandardMaterial3D] = {}
+static var _batch_material: StandardMaterial3D
+static var _occluder_material: ShaderMaterial
 
 
 static func material(p: Palette) -> StandardMaterial3D:
@@ -129,3 +132,66 @@ static func rock_mesh() -> Mesh:
 	m.radial_segments = 6
 	m.rings = 3
 	return m
+
+
+# --- P1: collidable, batched level pieces ----------------------------------------------------------
+
+
+## Shared material for MultiMesh props: per-instance colour through vertex colour.
+static func batch_material() -> StandardMaterial3D:
+	if _batch_material == null:
+		_batch_material = StandardMaterial3D.new()
+		_batch_material.vertex_color_use_as_albedo = true
+		_batch_material.vertex_color_is_srgb = true
+		_batch_material.roughness = 0.85
+	return _batch_material
+
+
+static func occluder_material() -> ShaderMaterial:
+	if _occluder_material == null:
+		_occluder_material = ShaderMaterial.new()
+		_occluder_material.shader = OCCLUDER_SHADER
+	return _occluder_material
+
+
+## One MultiMesh (one draw + one shadow draw) for many identical props.
+static func batch(mesh: Mesh, transforms: Array[Transform3D], colors: PackedColorArray) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = mesh
+	mm.instance_count = transforms.size()
+	for i in transforms.size():
+		mm.set_instance_transform(i, transforms[i])
+		mm.set_instance_color(i, colors[i] if i < colors.size() else Color.WHITE)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = batch_material()
+	return mmi
+
+
+## Collision-only box (no draw call). `xform` must be unscaled.
+static func box_shape(size: Vector3, xform: Transform3D) -> CollisionShape3D:
+	var shape := BoxShape3D.new()
+	shape.size = size
+	var cs := CollisionShape3D.new()
+	cs.shape = shape
+	cs.transform = xform
+	return cs
+
+
+## Tall building shell: static collider + a mesh using the camera cut-away occluder shader.
+static func building(size: Vector3, pos: Vector3, tint: Color) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.collision_layer = PhysicsLayers.WORLD
+	body.collision_mask = 0
+	body.position = pos + Vector3(0, size.y * 0.5, 0)
+	body.add_child(box_shape(size, Transform3D()))
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = occluder_material()
+	mi.set_instance_shader_parameter(&"tint", tint)
+	body.add_child(mi)
+	return body

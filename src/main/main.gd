@@ -8,19 +8,28 @@ extends Node
 ##   --bench-warmup=S --bench-sample=S --bench-out=PATH --bench-stage=NAME
 ##   --screenshot=PATH        save a PNG after --frames=N frames (default 45), then quit
 ##   --no-debug-ui            hide perf HUD + dev panel (clean screenshots)
+##   --touch-ui               start in touch mode (shows the virtual sticks on desktop)
+##   --autoplay               a scripted pilot plays the player (soak tests, demos, device perf runs)
 
 const DEFAULT_WORLD := "res://src/world/proving_grounds/proving_grounds.tscn"
 const BENCH_WORLD := "res://src/debug/bench/bench.tscn"
 
 var _args: Dictionary = {}
+var _context := WorldContext.new()
 
 @onready var _world: Node3D = %World
+@onready var _input_router: InputRouter = %InputRouter
+@onready var _touch: TouchControls = %TouchControls
+@onready var _hud: Hud = %Hud
 @onready var _debug_ui: Control = %DebugUI
 @onready var _dev_panel: DevPanel = %DevPanel
 
 
 func _ready() -> void:
 	_args = CliArgs.parse(OS.get_cmdline_user_args())
+	_context.input_router = _input_router
+	_context.args = _args
+	_touch.bind(_input_router)
 	Log.info(
 		"Main", "boot %s | %s" % [ProjectSettings.get_setting("application/config/version"), PerfProbe.device_info()]
 	)
@@ -28,6 +37,8 @@ func _ready() -> void:
 		Settings.set_preset(StringName(str(_args["preset"])), false)
 	if not OS.is_debug_build() or _args.has("no-debug-ui"):
 		_debug_ui.queue_free()
+	if _args.has("touch-ui"):  # screenshots/tests of the touch layout on desktop
+		_input_router.press_touch_action(&"")
 	else:
 		_dev_panel.bench_requested.connect(func() -> void: run_bench(false))
 
@@ -57,6 +68,8 @@ func load_world(path: String) -> Node:
 		Log.error("Main", "cannot load world scene %s" % path)
 		return null
 	var inst := scene.instantiate()
+	if inst.has_method(&"setup_world"):
+		inst.call(&"setup_world", _context)
 	_world.add_child(inst)
 	return inst
 
@@ -68,10 +81,12 @@ func run_bench(quit_when_done: bool) -> void:
 	var ui_was_visible := is_instance_valid(_debug_ui) and _debug_ui.visible
 	if is_instance_valid(_debug_ui):
 		_debug_ui.visible = false
+	_hud.visible = false
 	bench.run()
 	var results: Dictionary = await bench.finished
 	if is_instance_valid(_debug_ui):
 		_debug_ui.visible = ui_was_visible
+	_hud.visible = true
 	if is_instance_valid(_dev_panel):
 		_dev_panel.show_bench_results(results)
 	if quit_when_done:

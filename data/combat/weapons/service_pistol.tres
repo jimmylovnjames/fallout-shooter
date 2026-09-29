@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://src/combat/weapon_def.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"wpn_service_pistol"
+name_key = "ITEM_WPN_SERVICE_PISTOL"
+weapon_class = 0
+fire_mode = 0
+damage = 22.0
+rpm = 280.0
+mag_size = 12
+reload_s = 1.1
+range_m = 30.0
+spread_deg = 1.5
+tracer_color = Color(1, 0.86, 0.55, 1)

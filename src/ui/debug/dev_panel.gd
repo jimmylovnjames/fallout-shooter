@@ -26,6 +26,7 @@ func _ready() -> void:
 	style.set_corner_radius_all(8)
 	add_theme_stylebox_override("panel", style)
 	custom_minimum_size.x = 440
+	add_to_group(&"touch_blocker")
 	_build()
 	_sync()
 	EventBus.graphics_preset_applied.connect(func(_p: GraphicsPreset) -> void: _sync())
@@ -40,7 +41,8 @@ func _build() -> void:
 	var header := Button.new()
 	header.text = tr("UI_DEV_PANEL") + "  ▾"
 	header.toggle_mode = true
-	header.button_pressed = true
+	# Collapsed on phones so it doesn't cover the right stick; expanded on desktop.
+	header.button_pressed = not OS.has_feature("mobile")
 	_style_button(header)
 	root.add_child(header)
 

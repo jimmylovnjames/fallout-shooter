@@ -14,6 +14,7 @@ tools/ci.sh --no-export --no-render      # fast inner loop (~10 s)
 tools/export_android.sh                  # signed debug APK -> build/wasteland-debug.apk
 tools/run_bench.sh gfx_high              # draw-call budget check under a real renderer
 tools/screenshot.sh <res://scene.tscn> <out.png> [preset]   # look at what you built
+godot --path . -- --autoplay --screenshot=build/x.png --frames=420   # combat screenshot (needs xvfb-run)
 godot --headless --audio-driver Dummy -s addons/gut/gut_cmdln.gd   # tests only
 ```
 
@@ -25,11 +26,17 @@ FPS/memory from lavapipe are meaningless; only draw calls/primitives/objects are
 
 ```
 src/autoload/   EventBus, Settings, GameState, SaveManager — the ONLY autoloads (D005)
-src/core/       static classes: ContentDB, Def, Log, PerfProbe, CliArgs, save/SaveCodec, save/SaveMigrator
+src/core/       static classes: ContentDB, Def, Log, PerfProbe, CliArgs, PhysicsLayers, save/SaveCodec, save/SaveMigrator
 src/settings/   GraphicsPreset (Def)
-src/main/       main.tscn: boot, world routing, CLI flags
-src/world/      scenes: environments, camera, greybox kit, proving grounds (regions/chunks in P1+)
-src/ui/         SafeAreaContainer, debug/PerfHud, debug/DevPanel
+src/main/       main.tscn: boot, world routing, CLI flags, HUD/touch/debug layers
+src/input/      InputBindings, InputRouter, InputFrame (screen space), ActorIntent (world space), AimMath
+src/combat/     WeaponDef/WeaponState/WeaponMount, HealthPool/HealthComponent, DamageInfo, Hitscan,
+                ProjectileSystem, AimAssist, CombatServices
+src/actors/     Actor base, ActorDef/EnemyArchetypeDef, ActorVisual, MeshMerge, player/, enemy/
+src/ai/         AIBrain (utility HFSM + blackboard), AIState, Perception, states/
+src/vfx/        MultiMeshPool, TracerPool, BurstPool (one draw call each)
+src/world/      environments, camera (CameraRig), greybox kit, spawning, proving_grounds (P1 arena)
+src/ui/         SafeAreaContainer, hud/, touch/, debug/PerfHud, debug/DevPanel
 src/debug/      bench
 src/shaders/    .gdshader files
 data/           content Defs as .tres, by domain (data/settings/graphics/…)
@@ -47,6 +54,10 @@ tools/          shell tooling (.gdignore'd)   docs/  (.gdignore'd)   keys/debug.
   constants `UPPER_SNAKE`; signals past tense (`died`, `item_added`).
 - **Signals up, calls down.** No `get_node("../..")`. Cross-system broadcasts go through `EventBus`.
 - **Domain logic in `RefCounted` classes** (testable without scenes); Nodes are thin adapters.
+- Actors are driven only through `ActorIntent` (D029). Level systems are injected
+  (`CombatServices`, `WorldContext`, D031) — never looked up globally.
+- Resources mutated per instance must be `resource_local_to_scene` / duplicated (D032).
+- New `class_name` scripts need `godot --headless --import` before running scenes that use them.
 - Soft cap 400 lines per script. No god scripts.
 - Content = typed `Def` resources in `data/` with type-prefixed, lower_snake ids (`wpn_`, `arm_`,
   `perk_`, `gfx_`…). Heavy assets referenced by path. Every new Def type overrides `validate()`.

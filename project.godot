@@ -73,3 +73,18 @@ rendering_device/fallback_to_opengl3=true
 textures/vram_compression/import_etc2_astc=true
 textures/vram_compression/import_s3tc_bptc=true
 lights_and_shadows/directional_shadow/size.mobile=2048
+
+[shader_globals]
+
+cutaway_center={
+"type": "vec2",
+"value": Vector2(0.5, 0.5)
+}
+cutaway_radius={
+"type": "float",
+"value": 0.0
+}
+cutaway_depth={
+"type": "float",
+"value": 0.0
+}

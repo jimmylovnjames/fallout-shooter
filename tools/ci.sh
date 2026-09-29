@@ -76,6 +76,8 @@ fi
 
 if [[ $RENDER -eq 1 ]] && can_render; then
   "$ROOT/tools/screenshot.sh" res://src/world/proving_grounds/proving_grounds.tscn "$BUILD_DIR/screenshots/proving_grounds_high.png" gfx_high
+  "$ROOT/tools/screenshot.sh" res://src/world/proving_grounds/proving_grounds.tscn "$BUILD_DIR/screenshots/combat_touch_high.png" gfx_high \
+    --autoplay --touch-ui --no-debug-ui --frames=600
   "$ROOT/tools/run_bench.sh" gfx_high 1 2
   python3 - "$BUILD_DIR/bench-gfx_high.json" >> "$SUMMARY" <<'PY'
 import json, sys

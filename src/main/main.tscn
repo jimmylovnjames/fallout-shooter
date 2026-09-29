@@ -1,15 +1,58 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/ui/safe_area_container.gd" id="2_safe"]
 [ext_resource type="Script" path="res://src/ui/debug/perf_hud.gd" id="3_hud"]
 [ext_resource type="Script" path="res://src/ui/debug/dev_panel.gd" id="4_dev"]
+[ext_resource type="Script" path="res://src/input/input_router.gd" id="5_router"]
+[ext_resource type="Script" path="res://src/ui/hud/hud.gd" id="6_hud"]
+[ext_resource type="Script" path="res://src/ui/touch/touch_controls.gd" id="7_touch"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
 
+[node name="InputRouter" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_router")
+
 [node name="World" type="Node3D" parent="."]
 unique_name_in_owner = true
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="HudSafeArea" type="MarginContainer" parent="HudLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_safe")
+
+[node name="Hud" type="Control" parent="HudLayer/HudSafeArea"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("6_hud")
+
+[node name="TouchLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="TouchSafeArea" type="MarginContainer" parent="TouchLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_safe")
+
+[node name="TouchControls" type="Control" parent="TouchLayer/TouchSafeArea"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("7_touch")
 
 [node name="DebugLayer" type="CanvasLayer" parent="."]
 layer = 100
@@ -31,8 +74,9 @@ mouse_filter = 2
 [node name="PerfHud" type="PanelContainer" parent="DebugLayer/DebugUI/Overlay"]
 unique_name_in_owner = true
 layout_mode = 0
+offset_top = 44.0
 offset_right = 40.0
-offset_bottom = 40.0
+offset_bottom = 84.0
 mouse_filter = 2
 script = ExtResource("3_hud")
 

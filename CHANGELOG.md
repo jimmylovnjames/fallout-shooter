@@ -3,6 +3,56 @@
 Each phase tag gets an entry with what shipped, measured performance, and known gaps.
 Device numbers are filled in when the director runs the in-app benchmark (docs/PERF.md).
 
+## [p1] — 2026-09-29 — Core loop (greybox)
+
+### Added
+- **Input:** `InputRouter` merges keyboard/mouse (cursor aim), gamepad (twin-stick, RT or
+  full-deflection fire) and touch into one frame; runtime `InputBindings`; device auto-switching.
+- **Touch:** floating twin sticks (right stick aims and fires past 50 % deflection) + Reload /
+  Swap / Use buttons, one multi-touch dispatcher (a thumb on a stick never blocks a button tap),
+  shown only while touch is the active device; aim assist (14° cone, LOS-checked).
+- **Actors:** intent-driven `Actor` shared by player and AI; merged single-surface greybox body
+  with outline; hit flash + dissolve death via instance uniforms; player respawn (3 s) with 2 s
+  spawn protection.
+- **Camera:** follow rig with aim look-ahead and a dithered cut-away that keeps the player visible
+  behind buildings (global shader uniforms).
+- **Combat:** data-driven weapons (`wpn_service_pistol` hitscan, `wpn_rivet_carbine` projectile,
+  `wpn_scav_repeater` enemy), spread, frame-rate-independent fire cadence, magazines, reload, swap;
+  projectiles/tracers/impacts each rendered by one MultiMesh.
+- **AI:** `enm_scavenger` with a utility-scored state machine (patrol / engage / investigate),
+  FOV + line-of-sight + hearing, navmesh pathing, strafing at preferred range, burst fire with
+  settling aim error, target leading; AI LOD (10 Hz near / 2 Hz far).
+- **Arena:** proving grounds rebuilt as a playable block — batched props with colliders, navmesh
+  baked from colliders, 10 pooled hunting enemies with respawn.
+- **HUD:** health, weapon + ammo, reload progress, kill count, damage vignette, death banner.
+- **Tooling:** `--autoplay` pilot; end-to-end combat soak test; `combat_p1` bench stage; CI now
+  also renders a combat screenshot.
+- Tests: 112 (unit + integration incl. real-physics combat, AI state transitions, soak).
+
+### Fixed / learned (see DECISIONS D028–D036)
+- Shared `NavigationMesh` resource baked concurrently by two level instances → AI without
+  navmesh. Now local-to-scene + duplicated.
+- Instance uniforms shared by a material and its outline pass must use the same slot → explicit
+  `instance_index`.
+- Enemies never hit a strafing player (slow, unled projectiles) → target leading.
+- Enemies could engage from off-screen → sight 18 m, camera 24 m.
+- Backlit sun made camera-facing walls black → sun now lights what the camera sees.
+
+### Performance (CI, lavapipe software Vulkan, Mobile renderer, High preset, 1280×720)
+| Scenario | Draw calls | Primitives |
+|---|---:|---:|
+| **bench `combat_p1`** (arena + 1 player + 10 enemies + 200 projectiles + FX) — target < 150 | **53** | 83 k |
+| proving grounds gameplay incl. HUD + touch + debug UI | ~79 | 70 k |
+| bench `target_scene` (P0 reference) | 143 | 210 k |
+
+APK: **27.2 MB**. On-device FPS/RSS for the P1 exit criterion (60 fps High, 10 enemies +
+200 projectiles): **pending** — run Dev → Run benchmark (includes `combat_p1`) and send the result.
+
+### Known gaps
+- Autopilot orbit heuristic can hug walls (demo/soak only).
+- No off-screen threat indicators yet (P2).
+- Enemy weapons have infinite reserve ammo; player reloads are free until P2 inventory.
+
 ## [p0] — 2026-09-28 — Setup
 
 ### Added

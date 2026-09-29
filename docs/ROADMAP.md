@@ -30,8 +30,26 @@ If a feature blows the budget it is fixed or cut, and the cut is recorded in `DE
 - [x] GitHub Actions workflow mirroring `ci.sh`; releases on `p*` tags
 - [x] Signed debug APK, tag `p0` (created by the CI release dispatch, D027)
 
+## P1 breakdown
+
+- [x] `InputRouter` (KBM / gamepad / touch → one `InputFrame`), runtime `InputBindings`
+- [x] Multi-touch twin sticks (floating) + reload / swap / use buttons; hidden for non-touch devices
+- [x] `Actor` base (intent-driven movement/facing/weapons/death) shared by player and AI
+- [x] Camera rig: follow + aim look-ahead + dither cut-away of occluding buildings
+- [x] Weapons: data-driven `WeaponDef`, hitscan + projectile, spread, magazines, reload, swap
+- [x] Projectiles / tracers / impacts: packed arrays + one MultiMesh each
+- [x] Health, hit flash, dissolve death (instance uniforms), player respawn with spawn protection
+- [x] Enemy archetype (`enm_scavenger`): utility HFSM patrol / engage / investigate, perception
+      (FOV + LOS + hearing), navmesh pathing, bursts, aim error settling, target leading
+- [x] Pooled spawner (10 alive), arena with batched props + navmesh baked from colliders
+- [x] HUD: health, weapon/ammo, reload, kills, damage vignette, death banner
+- [x] Autopilot + end-to-end combat soak test; combat bench stage (< 150 draws: **53**)
+- [ ] On-device: 60 fps High on OnePlus 12 with 10 enemies + 200 projectiles — **needs the director's bench run**
+
 ## Parking lot (not scheduled)
 - Full-screen depth-edge outline on Ultra (needs device numbers)
 - Dialogue graph visualiser for `.dlg`
 - Play Asset Delivery integration (P7)
 - Cloud saves (Play Games Services) — post-P7, only if wanted
+- Off-screen threat indicators (P2 HUD)
+- Autopilot navmesh-aware pathing (currently orbit + unstick heuristic)

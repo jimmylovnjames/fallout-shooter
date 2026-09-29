@@ -110,3 +110,45 @@ The build container's git proxy accepts branch pushes but rejects tag pushes (ob
 repeatable). Running the workflow with `release_tag: pN` tags the exact commit it built and
 publishes the Release with the APK, so the tag always matches a green build. Pushing a `p*` tag
 from a normal git client still works too.
+
+**D028 — Input actions are registered at runtime from `InputBindings` (not `project.godot`).**
+One typed, reviewable table of actions + default key/pad/mouse events; rebinding (P2) stores
+overrides in Settings. `ensure_registered()` is idempotent and unit-tested.
+
+**D029 — Actors are driven by `ActorIntent`; player and AI share one `Actor` class.**
+`PlayerController` (input) and `AIBrain` (utility HFSM) only write intent (move/aim/fire/reload/
+swap). Movement, facing, weapons and death are identical for both, so AI can't cheat and
+autopilots/cutscenes can drive the player. One-shot intents (swap/reload) are consumed by the
+weapon mount.
+
+**D030 — Greybox actors are ONE merged surface with vertex colours; tint, hit flash and dissolve
+are `instance uniform`s with explicit `instance_index`es shared by the outline pass.**
+Measured: 11 actors + arena + 200 projectiles = 53 draw calls (P0's 2-surface actors cost 4 each).
+Instance uniforms keep a single shared material; the engine requires passes of one instance to
+agree on uniform slots, hence explicit indices.
+
+**D031 — Level systems are injected, not looked up: `CombatServices` (projectiles, tracers,
+bursts, RNG) and `WorldContext` (input router, CLI args).**
+Main hands `WorldContext` to a world before it enters the tree; the world hands `CombatServices`
+to actors it spawns. No hidden global lookups; tests build their own fixtures.
+
+**D032 — Resources that get mutated per instance (navmesh bake) are `resource_local_to_scene`
+and duplicated before use.**
+Found in P1: two arena instances baking the same `NavigationMesh` concurrently → second bake
+fails → AI has no navmesh. Same bug would hit a fast level reload.
+
+**D033 — Enemies engage only inside what the camera shows; projectiles lead moving targets.**
+Sight 18 m / preferred range 9 m with a 24 m camera distance. Slow (20 m/s) enemy projectiles stay
+dodgeable, but `lead_skill` (0–1) aims at the first-order intercept so constant strafing isn't an
+exploit (the soak test caught enemies never hitting a strafing player). Off-screen threat
+indicators are a P2 HUD item.
+
+**D034 — Arena spawns hunt: pooled enemies roam around the player's area instead of idling at
+their spawn.** Keeps pressure in the P1 arena; open-world encounters (P6) will use schedules and
+patrol routes instead.
+
+**D035 — Sun direction favours readability: light travels roughly along the camera's view so
+camera-facing walls are lit and shadows fall away from the player.** Supersedes P0's backlit sun.
+
+**D036 — `--autoplay` scripted pilot for soak tests, demos and on-device perf runs.**
+Gives repeatable combat load without a human; CI's soak test uses it to prove the full loop.

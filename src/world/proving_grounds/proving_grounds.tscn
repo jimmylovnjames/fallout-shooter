@@ -1,9 +1,20 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/world/proving_grounds/proving_grounds.gd" id="1_pg"]
 [ext_resource type="Environment" path="res://src/world/environments/wasteland_day.tres" id="2_env"]
 [ext_resource type="Script" path="res://src/world/environments/sun_rig.gd" id="3_sun"]
-[ext_resource type="Script" path="res://src/world/camera/top_down_camera.gd" id="4_cam"]
+[ext_resource type="PackedScene" path="res://src/world/camera/camera_rig.tscn" id="4_rig"]
+[ext_resource type="Script" path="res://src/world/spawning/enemy_spawner.gd" id="5_spawner"]
+
+[sub_resource type="NavigationMesh" id="navmesh"]
+resource_local_to_scene = true
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 2.0
+agent_radius = 0.5
+agent_max_climb = 0.25
 
 [node name="ProvingGrounds" type="Node3D"]
 script = ExtResource("1_pg")
@@ -14,8 +25,14 @@ environment = ExtResource("2_env")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 script = ExtResource("3_sun")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-current = true
-script = ExtResource("4_cam")
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("navmesh")
 
-[node name="Props" type="Node3D" parent="."]
+[node name="Geometry" type="Node3D" parent="NavigationRegion3D"]
+
+[node name="CameraRig" parent="." instance=ExtResource("4_rig")]
+
+[node name="EnemySpawner" type="Node3D" parent="."]
+script = ExtResource("5_spawner")
+
+[node name="Combat" type="Node3D" parent="."]

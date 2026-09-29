@@ -19,6 +19,9 @@ const STAGES: Array[Dictionary] = [
 	{"name": "props_multimesh_4000", "multimesh": 4000, "budget": true},
 	{"name": "actors_20_outlined", "actors": 20, "budget": true},
 	{"name": "target_scene", "nodes": 30, "multimesh": 3000, "actors": 20, "budget": true},
+	# P1 exit criterion (ROADMAP): the real arena + 1 player + 10 enemies (real scenes) + 200
+	# projectiles in flight + tracers/impacts, under 150 draw calls.
+	{"name": "combat_p1", "arena": true, "live_actors": 11, "projectiles": 200, "max_draws": 150, "budget": true},
 ]
 
 var warmup_s: float = 1.0
@@ -28,6 +31,9 @@ var stage_filter: String = ""
 
 var _actors: Array[Node3D] = []
 var _t := 0.0
+var _services: CombatServices
+var _projectile_target := 0
+var _fx_rng := RandomNumberGenerator.new()
 
 @onready var _stage_root: Node3D = $StageRoot
 
@@ -65,6 +71,7 @@ func run() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	_feed_combat_fx()
 	for i in _actors.size():
 		var a := _actors[i]
 		var phase := _t * 0.7 + i * 0.9
@@ -109,7 +116,7 @@ func _run_stage(stage: Dictionary) -> Dictionary:
 		"pipeline_compiles": PerfProbe.pipeline_compilations() - pso_start,
 		"video_mem_mb": snap["video_mem_mb"],
 		"static_mem_mb": snap["static_mem_mb"],
-		"within_budget": (not stage.get("budget", true)) or draw_max <= DRAW_CALL_BUDGET,
+		"within_budget": (not stage.get("budget", true)) or draw_max <= int(stage.get("max_draws", DRAW_CALL_BUDGET)),
 	}
 
 
@@ -118,9 +125,17 @@ func _build_stage(stage: Dictionary) -> void:
 		_stage_root.remove_child(c)
 		c.queue_free()
 	_actors.clear()
+	_services = null
+	_projectile_target = 0
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
-	_stage_root.add_child(GreyboxKit.ground(160.0))
+	if stage.get("arena", false):
+		ArenaBuilder.build(_stage_root, rng, 44.0)
+	else:
+		_stage_root.add_child(GreyboxKit.ground(160.0))
+	var live: int = stage.get("live_actors", 0)
+	if live > 0:
+		_spawn_live_actors(live, int(stage.get("projectiles", 0)))
 	var nodes: int = stage.get("nodes", 0)
 	for i in nodes:
 		var pos := Vector3(rng.randf_range(-18, 18), 0, rng.randf_range(-12, 12))
@@ -140,6 +155,45 @@ func _build_stage(stage: Dictionary) -> void:
 		var a := GreyboxKit.actor_dummy(GreyboxKit.Palette.ACCENT if i == 0 else GreyboxKit.Palette.DARK)
 		_stage_root.add_child(a)
 		_actors.append(a)
+
+
+## Real Player/Enemy scenes (brains off) so the stage measures what gameplay renders.
+func _spawn_live_actors(count: int, projectiles: int) -> void:
+	_services = CombatServices.create(_stage_root, SEED)
+	_projectile_target = projectiles
+	_fx_rng.seed = SEED
+	var player := (load("res://src/actors/player/player.tscn") as PackedScene).instantiate() as Player
+	_stage_root.add_child(player)
+	player.setup(ContentDB.get_def(&"act_player") as ActorDef, _services, 0)
+	player.controller.enabled = false
+	_actors.append(player)
+	var enemy_scene := load("res://src/actors/enemy/enemy.tscn") as PackedScene
+	for i in count - 1:
+		var e := enemy_scene.instantiate() as Enemy
+		_stage_root.add_child(e)
+		e.setup_enemy(ContentDB.get_def(&"enm_scavenger") as EnemyArchetypeDef, _services, player, i)
+		e.spawn_at(Vector3.ZERO)
+		e.brain.set_physics_process(false)
+		_actors.append(e)
+
+
+## Keeps N projectiles in flight plus a steady stream of tracers and impact bursts.
+func _feed_combat_fx() -> void:
+	if _services == null:
+		return
+	var p := _services.projectiles
+	while p.live < _projectile_target:
+		var a := _fx_rng.randf() * TAU
+		var from := Vector3(cos(a), 0.0, sin(a)) * 16.0 + Vector3(0, 1.2, 0)
+		var to := Vector3(_fx_rng.randf_range(-4, 4), 1.2, _fx_rng.randf_range(-4, 4))
+		if not p.spawn(from, (to - from).normalized() * 20.0, 0.0, 0, RID(), 0, 40.0, Color(1, 0.4, 0.2)):
+			break
+	if _fx_rng.randf() < 0.5:
+		var o := Vector3(_fx_rng.randf_range(-6, 6), 1.2, _fx_rng.randf_range(-6, 6))
+		_services.tracers.spawn(
+			o, o + Vector3(_fx_rng.randf_range(-10, 10), 0, _fx_rng.randf_range(-10, 10)), Color(1, 0.85, 0.5)
+		)
+		_services.bursts.spawn(o, 0.3, Color(1, 0.8, 0.5))
 
 
 func _frame() -> float:

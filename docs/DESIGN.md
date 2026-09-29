@@ -59,7 +59,7 @@ names, UI designs, factions, items and mechanics-as-presented are not.
 |---|---:|---|
 | Terrain (3×3 visible chunks) | 20 | 1–2 surfaces per chunk, splat shader |
 | Static props | 50 | MultiMesh per (mesh, material) per chunk; merged static meshes |
-| Actors (≤ 20 on screen) | 60 | body + weapon (+ outline pass on actors only). **P0 measurement: an outlined 2-surface actor costs 4 draws → 20 actors = 80.** P1 must merge actor surfaces and/or outline only hostiles/interactables in view |
+| Actors (≤ 20 on screen) | 60 | One merged surface per actor + outline pass (D030). P0's 2-surface actors cost 4 draws each; P1's merged actors keep the whole combat scene (11 actors + arena + 200 projectiles) at 53 draws |
 | Settlement structures | 30 | build pieces batched into MultiMesh per piece type |
 | Projectiles / VFX | 15 | one MultiMesh for all projectiles; pooled particles |
 | Shadows (directional, 1–2 cascades) | 50 | shadow casters culled aggressively; props < 1 m don't cast |
@@ -289,8 +289,10 @@ in CI, so a typo fails the build instead of a quest.
   manager with packed arrays (pos/vel/ttl/owner/def) swept by raycasts each physics tick and drawn
   by a single `MultiMeshInstance3D` → constant draw calls regardless of bullet count.
 - **Melee**: shape cast arc on animation event. **Throwables**: pooled RigidBody3D with fuse.
-- **Aim assist** (touch): target selection within a cone (angle + distance weighted, stickiness,
-  line-of-sight check), plus gentle rotation magnetism. Gamepad: slowdown near targets. KBM: off.
+- **Aim assist** (touch): target selection within a 14° cone (angle + distance weighted,
+  line-of-sight check), bending aim 60 % toward the target (35 % on gamepad). KBM: off.
+- **Enemy fairness** (D033): enemies engage only within the visible area (sight 18 m at a 24 m
+  camera distance); slow projectiles lead moving targets by `lead_skill`.
 - **Limbs**: head/torso/arms/legs with separate HP pools; crippling effects via `EffectDef`.
 - **Damage**: `dmg_after = dmg × 100 / (100 + max(0, resist − penetration))` per armor layer on the
   hit limb; tunable per damage type.
@@ -503,14 +505,17 @@ First launch picks a preset from a device-tier heuristic (GPU name, core count, 
 
 ## 12–16. Reserved for per-phase detailed designs (added as phases start).
 
-## 17. Open creative questions for the director
-1. **Title** — "WASTELAND" can't ship (existing trademark). Want candidates?
-2. **Art-direction fork** — (a) stylized low-poly + strong lighting/fog (Quaternius/Kenney-coherent,
-   cheapest, best perf) vs (b) stylized-realistic PBR (Poly Haven/ambientCG materials on simple
-   geometry, harder to keep coherent, more texture memory).
-3. **Bracer look** — e.g. amber e-ink on taped industrial casing, or projected holo over a cracked
-   phone, or analog dials + paper-roll printer.
-4. **Four factions** — names, ideologies, and how they relate. Placeholder ids `fac_a…fac_d`.
-5. **Companions** — at least two; who are they?
-6. **Tone** — grim-sincere vs darkly satirical.
-7. Sign-off on attribute names (§6.2) and glossary (§2).
+## 17. Creative decisions
+
+Resolved 2026-09-29 (director: "defaults"):
+- **Art direction:** stylized low-poly with strong lighting, fog and colour grading
+  (Quaternius/Kenney-coherent; best perf). Poly Haven/ambientCG only for ground/material
+  detail that is re-stylised to match.
+- **Bracer look:** amber e-ink display in a taped, scuffed industrial casing.
+- **Tone:** grim-sincere.
+- **Glossary and attribute names (§2, §6.2):** accepted as proposed.
+
+Still open:
+1. **Title** — "WASTELAND" can't ship (existing trademark). Candidates in the P1 report.
+2. **Four factions** — names, ideologies, relations (placeholders `fac_a…fac_d`); needed by P5.
+3. **Companions** — at least two; needed by P5.
