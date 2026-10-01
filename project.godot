@@ -88,3 +88,15 @@ cutaway_depth={
 "type": "float",
 "value": 0.0
 }
+wetness={
+"type": "float",
+"value": 0.0
+}
+wind_dir={
+"type": "vec2",
+"value": Vector2(0.86, 0.32)
+}
+wind_strength={
+"type": "float",
+"value": 0.42
+}

@@ -41,6 +41,9 @@ Budgets (DESIGN §3): **60 fps High / ≥30 fps Low** on device · **< 250 draw 
   draws with shadows.
 - (P1) Cut-away shader uses `discard` → early-Z loss on tile GPUs, applied to buildings only.
   **[VERIFY]** cost on Adreno 750.
+- (visual pass) Procedural surface shaders, one MultiMesh for all building shells, plus dust,
+  scrub, rails and horizon props. `combat_p1` dropped to **46** draws / ~56 k prims (was 53 / 83 k)
+  because the eight building meshes collapsed into one color pass and one shadow pass.
 
 ## Results
 
@@ -50,5 +53,6 @@ Budgets (DESIGN §3): **60 fps High / ≥30 fps Low** on device · **< 250 draw 
 | P0 | CI | llvmpipe (software) | High | proving grounds (with debug UI) | 118 | 68 k | n/a | n/a | |
 | P1 | CI | llvmpipe (software) | High | bench `combat_p1` (arena, 11 actors, 200 projectiles, FX) | 53 | 83 k | n/a | n/a | 27.2 MB |
 | P1 | CI | llvmpipe (software) | High | arena gameplay incl. HUD/touch/debug UI | ~79 | 70 k | n/a | n/a | |
+| visual | local | llvmpipe (software) | High | bench `combat_p1` after stylized materials | 46 | 56 k | n/a | n/a | |
 | P0/P1 | device | OnePlus 12 / Adreno 750 | High | bench (all stages) | _pending: director run_ | | | | |
 | P0 | device | mid-range | Low | bench | _pending_ | | | | |

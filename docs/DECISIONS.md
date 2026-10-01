@@ -152,3 +152,9 @@ camera-facing walls are lit and shadows fall away from the player.** Supersedes 
 
 **D036 — `--autoplay` scripted pilot for soak tests, demos and on-device perf runs.**
 Gives repeatable combat load without a human; CI's soak test uses it to prove the full loop.
+
+**D037 — Stylized surface shaders stand in until P6 art.** Props, ground and building shells
+share procedural spatial shaders (albedo breakup, contact darkening, per-material detail, a
+`wetness` global) instead of flat colours. The arena road is painted into the ground shader so it
+is not an extra shadow-casting slab. Buildings are one scaled MultiMesh; dust sheets and dry scrub
+are one MultiMesh each and follow `fog_detail` / `foliage_density`. Batching rules are unchanged.

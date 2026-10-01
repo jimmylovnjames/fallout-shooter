@@ -26,6 +26,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_weapon_label = _make_label(20, HORIZONTAL_ALIGNMENT_CENTER)
 	_ammo_label = _make_label(34, HORIZONTAL_ALIGNMENT_CENTER)
+	_ammo_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.42))
 	_kills_label = _make_label(22, HORIZONTAL_ALIGNMENT_CENTER)
 	_death_label = _make_label(44, HORIZONTAL_ALIGNMENT_CENTER)
 	_death_label.visible = false
@@ -71,27 +72,31 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	# Damage vignette: four soft edge bands (cheap; no full-screen shader).
+	# Damage vignette: a few stacked bands, still no full-screen shader.
 	if _vignette > 0.0:
-		var c := Color(0.8, 0.05, 0.02, _vignette * 0.5)
-		var band := 70.0
-		draw_rect(Rect2(0, 0, size.x, band), c)
-		draw_rect(Rect2(0, size.y - band, size.x, band), c)
-		draw_rect(Rect2(0, band, band, size.y - band * 2), c)
-		draw_rect(Rect2(size.x - band, band, band, size.y - band * 2), c)
-	# Health bar (top-left).
-	var origin := Vector2(12, 12)
-	draw_rect(Rect2(origin - Vector2(3, 3), BAR_SIZE + Vector2(6, 6)), Color(0, 0, 0, 0.55))
+		for band_i in 3:
+			var t := float(band_i) / 3.0
+			var band := 110.0 * (1.0 - t * 0.45)
+			var c := Color(0.45, 0.06, 0.02, _vignette * 0.22 * (1.0 - t))
+			draw_rect(Rect2(0, 0, size.x, band), c)
+			draw_rect(Rect2(0, size.y - band, size.x, band), c)
+			draw_rect(Rect2(0, band, band, size.y - band * 2.0), c)
+			draw_rect(Rect2(size.x - band, band, band, size.y - band * 2.0), c)
+	var origin := Vector2(16, 16)
+	var plate := Rect2(origin, BAR_SIZE).grow(4.0)
+	draw_rect(plate, Color(0.05, 0.035, 0.025, 0.78))
+	draw_rect(plate, Color(0.9, 0.58, 0.28, 0.9), false, 1.5)
 	var f := clampf(_health_shown / _health_max, 0.0, 1.0)
-	var col := Color(0.85, 0.3, 0.15) if f < 0.3 else Color(0.95, 0.62, 0.22)
+	var col := Color(0.72, 0.18, 0.08) if f < 0.3 else Color(0.95, 0.58, 0.18)
 	draw_rect(Rect2(origin, Vector2(BAR_SIZE.x * f, BAR_SIZE.y)), col)
-	# Reload progress (under ammo).
+	if f > 0.0:
+		draw_rect(Rect2(origin, Vector2(BAR_SIZE.x * f, 3.0)), Color(1.0, 0.86, 0.55, 0.75))
 	var now := Time.get_ticks_msec() / 1000.0
 	if now < _reload_until and _reload_duration > 0.0:
 		var p := 1.0 - (_reload_until - now) / _reload_duration
 		var r := Rect2(Vector2(size.x * 0.5 - 100, size.y - 18), Vector2(200, 6))
-		draw_rect(r, Color(0, 0, 0, 0.5))
-		draw_rect(Rect2(r.position, Vector2(r.size.x * p, r.size.y)), Color(1, 0.8, 0.4))
+		draw_rect(r, Color(0.04, 0.03, 0.02, 0.65))
+		draw_rect(Rect2(r.position, Vector2(r.size.x * p, r.size.y)), Color(1.0, 0.72, 0.32))
 
 
 func _on_health(current: float, maximum: float) -> void:
@@ -120,7 +125,8 @@ func _on_kill(_id: StringName) -> void:
 func _make_label(font_size: int, align: HorizontalAlignment) -> Label:
 	var l := Label.new()
 	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	l.add_theme_color_override("font_color", Color(0.96, 0.9, 0.78))
+	l.add_theme_color_override("font_shadow_color", Color(0.05, 0.03, 0.02, 0.92))
 	l.add_theme_constant_override("shadow_offset_x", 2)
 	l.add_theme_constant_override("shadow_offset_y", 2)
 	l.horizontal_alignment = align

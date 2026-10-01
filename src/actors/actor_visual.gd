@@ -83,7 +83,7 @@ static func shared_material() -> ShaderMaterial:
 	return _shared_material
 
 
-## Capsule body (tintable), head band, and a dark box weapon pointing along -Z (forward).
+## Capsule body (tintable), yoke, pack, amber visor, and a dark weapon along -Z (forward).
 static func shared_mesh() -> ArrayMesh:
 	if _shared_mesh == null:
 		var body := CapsuleMesh.new()
@@ -91,21 +91,30 @@ static func shared_mesh() -> ArrayMesh:
 		body.height = 1.8
 		body.radial_segments = 12
 		body.rings = 4
+		var yoke := BoxMesh.new()
+		yoke.size = Vector3(0.74, 0.14, 0.32)
+		var belt := BoxMesh.new()
+		belt.size = Vector3(0.7, 0.1, 0.42)
+		var pack := BoxMesh.new()
+		pack.size = Vector3(0.36, 0.42, 0.18)
 		var visor := BoxMesh.new()
-		visor.size = Vector3(0.42, 0.12, 0.2)
+		visor.size = Vector3(0.4, 0.1, 0.12)
 		var gun := BoxMesh.new()
-		gun.size = Vector3(0.12, 0.14, 0.75)
+		gun.size = Vector3(0.1, 0.12, 0.72)
 		var parts: Array[Dictionary] = [
 			{"mesh": body, "transform": Transform3D(Basis(), Vector3(0, 0.9, 0)), "color": Color(1, 1, 1, 1)},
+			{"mesh": yoke, "transform": Transform3D(Basis(), Vector3(0, 1.42, 0)), "color": Color(0.16, 0.15, 0.14, 0)},
+			{"mesh": belt, "transform": Transform3D(Basis(), Vector3(0, 0.98, 0)), "color": Color(0.12, 0.1, 0.09, 0)},
+			{"mesh": pack, "transform": Transform3D(Basis(), Vector3(0, 1.18, 0.3)), "color": Color(0.7, 0.66, 0.6, 1)},
 			{
 				"mesh": visor,
-				"transform": Transform3D(Basis(), Vector3(0, 1.5, -0.26)),
-				"color": Color(0.1, 0.1, 0.1, 0)
+				"transform": Transform3D(Basis(), Vector3(0, 1.52, -0.3)),
+				"color": Color(0.95, 0.42, 0.08, 0)
 			},
 			{
 				"mesh": gun,
-				"transform": Transform3D(Basis(), Vector3(0.3, 1.15, -0.4)),
-				"color": Color(0.15, 0.14, 0.13, 0)
+				"transform": Transform3D(Basis(), Vector3(0.32, 1.12, -0.42)),
+				"color": Color(0.16, 0.15, 0.14, 0)
 			},
 		]
 		_shared_mesh = MeshMerge.merge(parts)
