@@ -30,16 +30,18 @@ void fragment() {
 	float grain = hash13(floor(obj_pos * 9.0));
 	base *= mix(0.9, 1.06, grain * cloth + (1.0 - cloth));
 	float grime = smoothstep(1.15, 0.12, obj_pos.y);
-	base = mix(base, base * vec3(0.7, 0.6, 0.48), grime * 0.4 * cloth);
+	base = mix(base, base * vec3(0.72, 0.62, 0.5), grime * 0.18 * cloth);
 	float warmth = base.r - base.b;
 	float visor = gear * smoothstep(0.2, 0.45, warmth);
+	float cold_lamp = gear * smoothstep(0.2, 0.45, -warmth);
 	ALBEDO = mix(base, vec3(1.0), hit_flash * 0.85);
-	ROUGHNESS = mix(mix(0.72, 0.4, gear), 0.25, visor);
-	METALLIC = mix(0.04, 0.62, gear) * (1.0 - visor);
+	ROUGHNESS = mix(mix(0.72, 0.4, gear), 0.22, max(visor, cold_lamp));
+	METALLIC = mix(0.04, 0.62, gear) * (1.0 - max(visor, cold_lamp));
 	SPECULAR = mix(0.3, 0.55, gear);
 	float edge = dissolve > 0.0 ? step(n, dissolve + 0.08) : 0.0;
 	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 2.6);
-	vec3 rim_col = vec3(1.0, 0.72, 0.48);
+	vec3 rim_col = vec3(1.0, 0.82, 0.45);
 	EMISSION = hit_flash * vec3(1.0, 0.85, 0.7) * 1.5 + edge * dissolve_edge * 3.0;
-	EMISSION += rim * rim_col * 0.08 + visor * vec3(1.0, 0.46, 0.1) * 0.55;
+	EMISSION += rim * rim_col * 0.1;
+	EMISSION += visor * vec3(1.0, 0.4, 0.05) * 0.85 + cold_lamp * vec3(0.15, 0.75, 1.0) * 0.9;
 }

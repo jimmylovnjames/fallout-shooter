@@ -11,14 +11,14 @@ extends DirectionalLight3D
 
 func _ready() -> void:
 	rotation_degrees = Vector3(-elevation_deg, azimuth_deg, 0.0)
-	light_color = Color(1.0, 0.9, 0.74)
-	light_energy = 1.28
+	light_color = Color(1.0, 0.95, 0.82)
+	light_energy = 1.5
 	light_specular = 0.48
 	light_indirect_energy = 1.1
 	directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	directional_shadow_max_distance = 62.0
 	directional_shadow_fade_start = 0.82
-	shadow_opacity = 0.8
+	shadow_opacity = 0.92
 	shadow_blur = 1.55
 	shadow_bias = 0.035
 	shadow_normal_bias = 0.7

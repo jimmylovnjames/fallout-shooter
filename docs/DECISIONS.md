@@ -153,6 +153,11 @@ camera-facing walls are lit and shadows fall away from the player.** Supersedes 
 **D036 — `--autoplay` scripted pilot for soak tests, demos and on-device perf runs.**
 Gives repeatable combat load without a human; CI's soak test uses it to prove the full loop.
 
+**D038 — Player and scavengers are different silhouettes on one material.** Director choice:
+more detailed stylized shapes, player first, vivid high-contrast palette. The player is a wide
+coat and square helmet with an amber lamp; scavengers are a round hood, junk pack and a long
+pipe, tinted cyan. Both stay one merged surface plus the shared outline (D030).
+
 **D037 — Stylized surface shaders stand in until P6 art.** Props, ground and building shells
 share procedural spatial shaders (albedo breakup, contact darkening, per-material detail, a
 `wetness` global) instead of flat colours. The arena road is painted into the ground shader so it

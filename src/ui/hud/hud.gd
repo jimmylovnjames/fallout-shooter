@@ -84,10 +84,10 @@ func _draw() -> void:
 			draw_rect(Rect2(size.x - band, band, band, size.y - band * 2.0), c)
 	var origin := Vector2(16, 16)
 	var plate := Rect2(origin, BAR_SIZE).grow(4.0)
-	draw_rect(plate, Color(0.05, 0.035, 0.025, 0.78))
-	draw_rect(plate, Color(0.9, 0.58, 0.28, 0.9), false, 1.5)
+	draw_rect(plate, Color(0.02, 0.02, 0.03, 0.88))
+	draw_rect(plate, Color(1.0, 0.45, 0.05, 1.0), false, 2.0)
 	var f := clampf(_health_shown / _health_max, 0.0, 1.0)
-	var col := Color(0.72, 0.18, 0.08) if f < 0.3 else Color(0.95, 0.58, 0.18)
+	var col := Color(0.9, 0.08, 0.12) if f < 0.3 else Color(1.0, 0.45, 0.02)
 	draw_rect(Rect2(origin, Vector2(BAR_SIZE.x * f, BAR_SIZE.y)), col)
 	if f > 0.0:
 		draw_rect(Rect2(origin, Vector2(BAR_SIZE.x * f, 3.0)), Color(1.0, 0.86, 0.55, 0.75))

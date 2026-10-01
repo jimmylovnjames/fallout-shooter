@@ -1,16 +1,21 @@
 class_name ActorVisual
 extends Node3D
-## Greybox actor body: one merged surface + outline pass, shared by every actor. Per-actor look
-## (tint, hit flash, dissolve) goes through instance uniforms, so no material is ever duplicated.
+## Actor body: one merged surface + outline pass. Player and scavenger use different meshes and
+## share one material. Tint, hit flash and dissolve are instance uniforms.
 
 signal dissolved
+
+enum Silhouette { PLAYER, SCAVENGER }
 
 const ACTOR_SHADER := preload("res://src/shaders/actor.gdshader")
 const OUTLINE_SHADER := preload("res://src/shaders/outline_hull.gdshader")
 const FLASH_DECAY_PER_S := 9.0
 
-static var _shared_mesh: ArrayMesh
+static var _player_mesh: ArrayMesh
+static var _scavenger_mesh: ArrayMesh
 static var _shared_material: ShaderMaterial
+
+@export var silhouette: Silhouette = Silhouette.SCAVENGER
 
 var _mi: MeshInstance3D
 var _tint := Color.WHITE
@@ -22,7 +27,7 @@ var _dissolve_rate := 0.0
 func _ready() -> void:
 	_mi = MeshInstance3D.new()
 	_mi.name = "Body"
-	_mi.mesh = shared_mesh()
+	_mi.mesh = mesh_for(silhouette)
 	_mi.material_override = shared_material()
 	add_child(_mi)
 	_mi.set_instance_shader_parameter(&"tint", _tint)
@@ -83,39 +88,26 @@ static func shared_material() -> ShaderMaterial:
 	return _shared_material
 
 
-## Capsule body (tintable), yoke, pack, amber visor, and a dark weapon along -Z (forward).
+static func mesh_for(kind: Silhouette) -> ArrayMesh:
+	match kind:
+		Silhouette.PLAYER:
+			return player_mesh()
+		_:
+			return scavenger_mesh()
+
+
+## Player silhouette. Kept so existing callers still get one outlined surface.
 static func shared_mesh() -> ArrayMesh:
-	if _shared_mesh == null:
-		var body := CapsuleMesh.new()
-		body.radius = 0.35
-		body.height = 1.8
-		body.radial_segments = 12
-		body.rings = 4
-		var yoke := BoxMesh.new()
-		yoke.size = Vector3(0.74, 0.14, 0.32)
-		var belt := BoxMesh.new()
-		belt.size = Vector3(0.7, 0.1, 0.42)
-		var pack := BoxMesh.new()
-		pack.size = Vector3(0.36, 0.42, 0.18)
-		var visor := BoxMesh.new()
-		visor.size = Vector3(0.4, 0.1, 0.12)
-		var gun := BoxMesh.new()
-		gun.size = Vector3(0.1, 0.12, 0.72)
-		var parts: Array[Dictionary] = [
-			{"mesh": body, "transform": Transform3D(Basis(), Vector3(0, 0.9, 0)), "color": Color(1, 1, 1, 1)},
-			{"mesh": yoke, "transform": Transform3D(Basis(), Vector3(0, 1.42, 0)), "color": Color(0.16, 0.15, 0.14, 0)},
-			{"mesh": belt, "transform": Transform3D(Basis(), Vector3(0, 0.98, 0)), "color": Color(0.12, 0.1, 0.09, 0)},
-			{"mesh": pack, "transform": Transform3D(Basis(), Vector3(0, 1.18, 0.3)), "color": Color(0.7, 0.66, 0.6, 1)},
-			{
-				"mesh": visor,
-				"transform": Transform3D(Basis(), Vector3(0, 1.52, -0.3)),
-				"color": Color(0.95, 0.42, 0.08, 0)
-			},
-			{
-				"mesh": gun,
-				"transform": Transform3D(Basis(), Vector3(0.32, 1.12, -0.42)),
-				"color": Color(0.16, 0.15, 0.14, 0)
-			},
-		]
-		_shared_mesh = MeshMerge.merge(parts)
-	return _shared_mesh
+	return player_mesh()
+
+
+static func player_mesh() -> ArrayMesh:
+	if _player_mesh == null:
+		_player_mesh = ActorMeshes.player()
+	return _player_mesh
+
+
+static func scavenger_mesh() -> ArrayMesh:
+	if _scavenger_mesh == null:
+		_scavenger_mesh = ActorMeshes.scavenger()
+	return _scavenger_mesh

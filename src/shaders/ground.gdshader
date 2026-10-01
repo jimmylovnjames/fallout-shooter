@@ -4,9 +4,9 @@ shader_type spatial;
 #include "res://src/shaders/noise.gdshaderinc"
 render_mode cull_back, diffuse_burley, specular_schlick_ggx;
 
-uniform vec3 sand_hi : source_color = vec3(0.78, 0.66, 0.46);
-uniform vec3 sand_lo : source_color = vec3(0.4, 0.33, 0.24);
-uniform vec3 asphalt : source_color = vec3(0.14, 0.13, 0.12);
+uniform vec3 sand_hi : source_color = vec3(0.96, 0.78, 0.32);
+uniform vec3 sand_lo : source_color = vec3(0.55, 0.22, 0.1);
+uniform vec3 asphalt : source_color = vec3(0.06, 0.07, 0.1);
 uniform float road_half_width = 3.05;
 uniform float road_half_length = 46.0;
 

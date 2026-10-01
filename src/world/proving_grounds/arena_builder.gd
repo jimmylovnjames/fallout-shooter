@@ -4,10 +4,10 @@ extends RefCounted
 ## static colliders. Repeated props are batched (one MultiMesh each) per the draw-call rules.
 
 const _WALL_TONES: Array[Color] = [
-	Color(0.74, 0.69, 0.6),
-	Color(0.34, 0.32, 0.3),
-	Color(0.58, 0.3, 0.16),
-	Color(0.52, 0.5, 0.46),
+	Color(0.93, 0.88, 0.72),
+	Color(0.1, 0.11, 0.14),
+	Color(0.9, 0.28, 0.06),
+	Color(0.78, 0.42, 0.1),
 ]
 
 

@@ -77,7 +77,7 @@ func _make_scrub() -> MultiMeshInstance3D:
 		var s := rng.randf_range(0.65, 1.35)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, rng.randf_range(0.7, 1.25), s))
 		xforms.append(Transform3D(basis, Vector3(x, 0.0, z)))
-		colors.append(Color(0.98, 0.82, 0.34).lerp(Color(0.78, 0.62, 0.24), rng.randf()))
+		colors.append(Color(0.98, 0.86, 0.12).lerp(Color(0.55, 0.72, 0.18), rng.randf()))
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true

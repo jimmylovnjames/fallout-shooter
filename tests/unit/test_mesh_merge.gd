@@ -24,5 +24,7 @@ func test_merge_single_surface_with_part_colours() -> void:
 
 
 func test_actor_mesh_is_one_surface() -> void:
-	assert_eq(ActorVisual.shared_mesh().get_surface_count(), 1, "one draw (+outline) per actor")
+	assert_eq(ActorVisual.player_mesh().get_surface_count(), 1, "one draw (+outline) per actor")
+	assert_eq(ActorVisual.scavenger_mesh().get_surface_count(), 1, "scavenger is one surface too")
+	assert_ne(ActorVisual.player_mesh().get_faces().size(), ActorVisual.scavenger_mesh().get_faces().size())
 	assert_not_null(ActorVisual.shared_material().next_pass, "outline pass")
