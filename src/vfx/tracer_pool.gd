@@ -2,13 +2,21 @@ class_name TracerPool
 extends MultiMeshPool
 ## Short-lived hitscan tracers (bright segments that thin out over their lifetime).
 
-const LIFE_S := 0.07
-const WIDTH := 0.06
+const LIFE_S := 0.14
+const WIDTH := 0.34
 
 var _a := PackedVector3Array()
 var _b := PackedVector3Array()
 var _age := PackedFloat32Array()
 var _color := PackedColorArray()
+
+
+func _make_mesh() -> Mesh:
+	return beam_mesh()
+
+
+func _make_material() -> Material:
+	return beam_material()
 
 
 func _allocate(n: int) -> void:

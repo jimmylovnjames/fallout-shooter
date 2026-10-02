@@ -82,7 +82,7 @@ func _shoot(w: WeaponState, origin: Vector3, aim: Vector3) -> void:
 			services.projectiles.spawn(
 				muzzle, dir * def.projectile_speed, def.damage, source_id, rid, shot_mask, def.range_m, def.tracer_color
 			)
-	services.bursts.spawn(muzzle, 0.28, def.tracer_color, 0.06)
+	services.bursts.spawn(muzzle, 0.55, def.tracer_color, 0.1)
 	if noise_radius > 0.0:
 		EventBus.noise_made.emit(muzzle, noise_radius, source_id)
 	shot_fired.emit(w)
@@ -100,6 +100,6 @@ func _hitscan(def: WeaponDef, muzzle: Vector3, dir: Vector3, source_id: int) -> 
 		if health != null:
 			health.apply_damage(DamageInfo.make(def.damage, source_id, end, dir))
 		services.bursts.spawn(
-			end, 0.3 if health != null else 0.22, Color(1, 0.3, 0.2) if health else Color(1, 0.8, 0.5)
+			end, 0.48 if health != null else 0.32, Color(1, 0.28, 0.12) if health else Color(1, 0.72, 0.28), 0.16
 		)
 	services.tracers.spawn(muzzle, end, def.tracer_color)
