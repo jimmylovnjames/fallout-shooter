@@ -14,4 +14,4 @@ mag_size = 12
 reload_s = 1.1
 range_m = 30.0
 spread_deg = 1.5
-tracer_color = Color(1, 0.86, 0.55, 1)
+tracer_color = Color(1, 0.46, 0.08, 1)

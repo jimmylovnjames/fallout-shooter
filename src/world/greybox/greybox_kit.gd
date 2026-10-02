@@ -15,27 +15,60 @@ const _COLORS: Dictionary[Palette, Color] = {
 }
 const OUTLINE_SHADER := preload("res://src/shaders/outline_hull.gdshader")
 const OCCLUDER_SHADER := preload("res://src/shaders/world_occluder.gdshader")
+const SURFACE_SHADER := preload("res://src/shaders/world_surface.gdshader")
+const GROUND_SHADER := preload("res://src/shaders/ground.gdshader")
+const EMISSIVE_SHADER := preload("res://src/shaders/emissive.gdshader")
+const SAND_TEX: Texture2D = preload("res://assets/textures/sand.png")
+const PLASTER_TEX: Texture2D = preload("res://assets/textures/plaster.png")
+const RUST_TEX: Texture2D = preload("res://assets/textures/rust.png")
+const WOOD_TEX: Texture2D = preload("res://assets/textures/wood.png")
+## world_surface.gdshader style ids that are not a Palette entry.
+const STYLE_ROCK := 7
+const STYLE_BARK := 8
 
-static var _materials: Dictionary[Palette, StandardMaterial3D] = {}
-static var _outlined: Dictionary[Palette, StandardMaterial3D] = {}
-static var _batch_material: StandardMaterial3D
+const _ROUGHNESS: Dictionary[Palette, float] = {
+	Palette.CONCRETE: 0.9,
+	Palette.RUST: 0.58,
+	Palette.SAND: 0.96,
+	Palette.WOOD: 0.78,
+	Palette.ACCENT: 0.48,
+	Palette.DARK: 0.4,
+}
+const _METALLIC: Dictionary[Palette, float] = {
+	Palette.CONCRETE: 0.0,
+	Palette.RUST: 0.42,
+	Palette.SAND: 0.0,
+	Palette.WOOD: 0.0,
+	Palette.ACCENT: 0.12,
+	Palette.DARK: 0.7,
+}
+
+static var _materials: Dictionary[Palette, ShaderMaterial] = {}
+static var _outlined: Dictionary[Palette, ShaderMaterial] = {}
+static var _batch_material: ShaderMaterial
+static var _styled: Dictionary[String, ShaderMaterial] = {}
+static var _ground_mat: ShaderMaterial
 static var _occluder_material: ShaderMaterial
+static var _shell_mesh: ArrayMesh
+static var _rock_mesh: ArrayMesh
 
 
-static func material(p: Palette) -> StandardMaterial3D:
+static func material(p: Palette) -> ShaderMaterial:
 	if not _materials.has(p):
-		var m := StandardMaterial3D.new()
-		m.albedo_color = _COLORS[p]
-		m.roughness = 0.85 if p != Palette.RUST else 0.7
-		m.metallic = 0.3 if p == Palette.RUST else 0.0
+		var m := ShaderMaterial.new()
+		m.shader = SURFACE_SHADER
+		m.set_shader_parameter(&"albedo", _COLORS[p])
+		m.set_shader_parameter(&"roughness_amt", _ROUGHNESS[p])
+		m.set_shader_parameter(&"metallic_amt", _METALLIC[p])
+		m.set_shader_parameter(&"style", int(p))
 		_materials[p] = m
 	return _materials[p]
 
 
 ## Same colour, with the inverted-hull outline as next_pass (actors/interactables only).
-static func outlined_material(p: Palette) -> StandardMaterial3D:
+static func outlined_material(p: Palette) -> ShaderMaterial:
 	if not _outlined.has(p):
-		var m := material(p).duplicate() as StandardMaterial3D
+		var m := material(p).duplicate() as ShaderMaterial
 		var outline := ShaderMaterial.new()
 		outline.shader = OUTLINE_SHADER
 		m.next_pass = outline
@@ -70,9 +103,12 @@ static func cylinder(radius: float, height: float, p: Palette, pos: Vector3) -> 
 static func ground(size_m: float) -> MeshInstance3D:
 	var mesh := PlaneMesh.new()
 	mesh.size = Vector2(size_m, size_m)
+	var splits := clampi(int(size_m / 4.0), 8, 48)
+	mesh.subdivide_width = splits
+	mesh.subdivide_depth = splits
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
-	mi.material_override = material(Palette.SAND)
+	mi.material_override = _ground_material()
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
 
@@ -108,42 +144,44 @@ static func scatter(
 	count: int,
 	extent: float,
 	rng: RandomNumberGenerator,
-	scale_range: Vector2 = Vector2(0.6, 1.4)
+	scale_range: Vector2 = Vector2(0.6, 1.4),
+	deform: float = 0.0,
+	style: int = -1
 ) -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = mesh
-	mm.instance_count = count
+	var xforms: Array[Transform3D] = []
+	var colors := PackedColorArray()
 	for i in count:
 		var s := rng.randf_range(scale_range.x, scale_range.y)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.5, 1.2), s))
 		var pos := Vector3(rng.randf_range(-extent, extent), 0.0, rng.randf_range(-extent, extent))
-		mm.set_instance_transform(i, Transform3D(basis, pos))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.material_override = material(p)
-	return mmi
+		xforms.append(Transform3D(basis, pos))
+		colors.append(_COLORS[p])
+	var resolved := style if style >= 0 else (STYLE_ROCK if deform > 0.0 else int(p))
+	return batch(mesh, xforms, colors, resolved, deform)
 
 
 static func rock_mesh() -> Mesh:
-	var m := SphereMesh.new()
-	m.radius = 0.35
-	m.height = 0.45
-	m.radial_segments = 6
-	m.rings = 3
-	return m
+	if _rock_mesh == null:
+		_rock_mesh = _build_rock_mesh()
+	return _rock_mesh
 
 
 # --- P1: collidable, batched level pieces ----------------------------------------------------------
 
 
-## Shared material for MultiMesh props: per-instance colour through vertex colour.
-static func batch_material() -> StandardMaterial3D:
+## Shared base for MultiMesh props. Colour is the instance colour. Style and deform are uniforms,
+## so each (style, deform) pair is its own material; instances of one batch still share it.
+static func batch_material() -> ShaderMaterial:
 	if _batch_material == null:
-		_batch_material = StandardMaterial3D.new()
-		_batch_material.vertex_color_use_as_albedo = true
-		_batch_material.vertex_color_is_srgb = true
-		_batch_material.roughness = 0.85
+		_batch_material = ShaderMaterial.new()
+		_batch_material.shader = SURFACE_SHADER
+		_batch_material.set_shader_parameter(&"albedo", Color.WHITE)
+		_batch_material.set_shader_parameter(&"roughness_amt", 0.86)
+		_batch_material.set_shader_parameter(&"metallic_amt", 0.0)
+		_batch_material.set_shader_parameter(&"style", 0)
+		_batch_material.set_shader_parameter(&"deform_amt", 0.0)
+		_batch_material.set_shader_parameter(&"rust_tex", RUST_TEX)
+		_batch_material.set_shader_parameter(&"wood_tex", WOOD_TEX)
 	return _batch_material
 
 
@@ -151,11 +189,15 @@ static func occluder_material() -> ShaderMaterial:
 	if _occluder_material == null:
 		_occluder_material = ShaderMaterial.new()
 		_occluder_material.shader = OCCLUDER_SHADER
+		_occluder_material.set_shader_parameter(&"plaster_tex", PLASTER_TEX)
 	return _occluder_material
 
 
 ## One MultiMesh (one draw + one shadow draw) for many identical props.
-static func batch(mesh: Mesh, transforms: Array[Transform3D], colors: PackedColorArray) -> MultiMeshInstance3D:
+## `style` is a world_surface style id. `deform` pushes vertices along the normal per instance.
+static func batch(
+	mesh: Mesh, transforms: Array[Transform3D], colors: PackedColorArray, style: int = 0, deform: float = 0.0
+) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -166,7 +208,23 @@ static func batch(mesh: Mesh, transforms: Array[Transform3D], colors: PackedColo
 		mm.set_instance_color(i, colors[i] if i < colors.size() else Color.WHITE)
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
-	mmi.material_override = batch_material()
+	mmi.material_override = _styled_material(style, deform)
+	return mmi
+
+
+## Buildings as one scaled unit-box MultiMesh (cut-away shader reads instance colour).
+static func batch_occluders(transforms: Array[Transform3D], colors: PackedColorArray) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = _ruin_shell()
+	mm.instance_count = transforms.size()
+	for i in transforms.size():
+		mm.set_instance_transform(i, transforms[i])
+		mm.set_instance_color(i, colors[i] if i < colors.size() else Color.WHITE)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = occluder_material()
 	return mmi
 
 
@@ -187,11 +245,110 @@ static func building(size: Vector3, pos: Vector3, tint: Color) -> StaticBody3D:
 	body.collision_mask = 0
 	body.position = pos + Vector3(0, size.y * 0.5, 0)
 	body.add_child(box_shape(size, Transform3D()))
-	var mesh := BoxMesh.new()
-	mesh.size = size
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	mi.mesh = _ruin_shell()
+	mi.scale = size
 	mi.material_override = occluder_material()
 	mi.set_instance_shader_parameter(&"tint", tint)
 	body.add_child(mi)
 	return body
+
+
+static func _styled_material(style: int, deform: float) -> ShaderMaterial:
+	var key := "%d@%.3f" % [style, deform]
+	if not _styled.has(key):
+		var m := batch_material().duplicate() as ShaderMaterial
+		m.set_shader_parameter(&"style", style)
+		m.set_shader_parameter(&"deform_amt", deform)
+		_styled[key] = m
+	return _styled[key]
+
+
+static func _ground_material() -> ShaderMaterial:
+	if _ground_mat == null:
+		_ground_mat = ShaderMaterial.new()
+		_ground_mat.shader = GROUND_SHADER
+		_ground_mat.set_shader_parameter(&"sand_tex", SAND_TEX)
+	return _ground_mat
+
+
+## One unshaded MultiMesh for lamp bulbs. No shadow.
+static func batch_emissive(mesh: Mesh, transforms: Array[Transform3D], color: Color) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = transforms.size()
+	for i in transforms.size():
+		mm.set_instance_transform(i, transforms[i])
+	var mat := ShaderMaterial.new()
+	mat.shader = EMISSIVE_SHADER
+	mat.set_shader_parameter(&"color", color)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mmi
+
+
+static func _ruin_shell() -> ArrayMesh:
+	if _shell_mesh == null:
+		_shell_mesh = PropMeshes.building_shell()
+	return _shell_mesh
+
+
+## Faceted pebble. Flat normals so per-instance deform reads as a rock, not a blob.
+static func _build_rock_mesh() -> ArrayMesh:
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.32
+	sphere.height = 0.36
+	sphere.radial_segments = 6
+	sphere.rings = 3
+	var src: PackedVector3Array = sphere.get_mesh_arrays()[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = sphere.get_mesh_arrays()[Mesh.ARRAY_INDEX]
+	var displaced := PackedVector3Array()
+	for v: Vector3 in src:
+		var len := v.length()
+		if len < 0.001:
+			displaced.append(v)
+		else:
+			displaced.append(v.normalized() * len * (0.72 + 0.5 * _unit_hash(v)))
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var out_idx := PackedInt32Array()
+	var f := 0
+	while f < indices.size():
+		var a := displaced[indices[f]]
+		var b := displaced[indices[f + 1]]
+		var c := displaced[indices[f + 2]]
+		a.y *= 0.72
+		b.y *= 0.72
+		c.y *= 0.72
+		var face_n := (b - a).cross(c - a)
+		if face_n.length_squared() < 0.000001:
+			f += 3
+			continue
+		face_n = face_n.normalized()
+		var base := verts.size()
+		verts.append(a)
+		verts.append(b)
+		verts.append(c)
+		normals.append(face_n)
+		normals.append(face_n)
+		normals.append(face_n)
+		out_idx.append(base)
+		out_idx.append(base + 1)
+		out_idx.append(base + 2)
+		f += 3
+	var out := []
+	out.resize(Mesh.ARRAY_MAX)
+	out[Mesh.ARRAY_VERTEX] = verts
+	out[Mesh.ARRAY_NORMAL] = normals
+	out[Mesh.ARRAY_INDEX] = out_idx
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, out)
+	return mesh
+
+
+static func _unit_hash(v: Vector3) -> float:
+	var s := sin(v.dot(Vector3(12.9898, 78.233, 45.164))) * 43758.5453
+	return s - floor(s)

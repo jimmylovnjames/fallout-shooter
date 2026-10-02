@@ -10,6 +10,10 @@ Mixamo raw files (no redistribution — DECISIONS D020), anything "free for pers
 | `addons/gut/fonts/` | Anonymous Pro, Courier Prime, Lobster Two (bundled with GUT) | respective font authors | via GUT | SIL OFL 1.1 (`addons/gut/fonts/OFL.txt`) | Dev-only; excluded from exports |
 | `icon.svg` | App icon (placeholder) | project | original | project-owned | |
 | `src/world/environments/wasteland_day.tres` | Procedural sky/fog environment | project | original | project-owned | |
+| `assets/textures/sand.png` | Stylized sand tile | project | original | project-owned | Generated for this repo, edge-blended to tile |
+| `assets/textures/plaster.png` | Stylized cracked plaster tile | project | original | project-owned | Generated for this repo, edge-blended to tile |
+| `assets/textures/rust.png` | Stylized rust tile | project | original | project-owned | Generated for this repo, edge-blended to tile |
+| `assets/textures/wood.png` | Stylized plank tile | project | original | project-owned | Generated for this repo, edge-blended to tile |
 
 Engine: Godot Engine 4.7.2 — MIT (© Godot Engine contributors). Engine third-party notices ship
 inside the engine; a licences screen will be added to the game's credits (P6).

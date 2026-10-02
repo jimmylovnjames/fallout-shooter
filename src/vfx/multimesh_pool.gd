@@ -4,6 +4,8 @@ extends MultiMeshInstance3D
 ## visible_instance_count tracks the live count. Removal is swap-with-last (O(1), order-free).
 ## Subclasses implement _make_mesh(), _make_material() and _write_instance(i).
 
+static var _beam_mesh: ArrayMesh
+
 @export var capacity: int = 256
 
 var live: int = 0
@@ -43,7 +45,28 @@ func _sync_visible() -> void:
 	multimesh.visible_instance_count = live
 
 
-## Transform that stretches a unit box (1 m along local Z) from `a` to `b` with `width`.
+## Two ribbons (flat and upright) so a bolt reads from the high camera. Unit size, local Z is the length.
+static func beam_mesh() -> ArrayMesh:
+	if _beam_mesh == null:
+		var quad := QuadMesh.new()
+		quad.size = Vector2(1.0, 1.0)
+		var flat := Basis(Vector3.RIGHT, -PI * 0.5)
+		var upright := Basis(Vector3.UP, PI * 0.5)
+		var parts: Array[Dictionary] = [
+			{"mesh": quad, "transform": Transform3D(flat, Vector3.ZERO), "color": Color.WHITE},
+			{"mesh": quad, "transform": Transform3D(upright, Vector3.ZERO), "color": Color.WHITE},
+		]
+		_beam_mesh = MeshMerge.merge(parts)
+	return _beam_mesh
+
+
+static func beam_material() -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://src/shaders/beam.gdshader")
+	return m
+
+
+## Transform that stretches a unit segment (1 m along local Z) from `a` to `b` with `width`.
 static func segment_transform(a: Vector3, b: Vector3, width: float) -> Transform3D:
 	var d := b - a
 	var len := d.length()

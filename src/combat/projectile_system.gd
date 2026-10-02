@@ -5,8 +5,8 @@ extends MultiMeshPool
 
 signal impacted(position: Vector3, normal: Vector3, hit_damageable: bool)
 
-const LENGTH_M := 0.7
-const WIDTH_M := 0.09
+const LENGTH_M := 1.45
+const WIDTH_M := 0.36
 
 var _pos := PackedVector3Array()
 var _vel := PackedVector3Array()
@@ -19,6 +19,14 @@ var _exclude: Array[RID] = []
 var _query := PhysicsRayQueryParameters3D.new()
 var _no_exclude: Array[RID] = []
 var _one_exclude: Array[RID] = [RID()]
+
+
+func _make_mesh() -> Mesh:
+	return beam_mesh()
+
+
+func _make_material() -> Material:
+	return beam_material()
 
 
 func _allocate(n: int) -> void:

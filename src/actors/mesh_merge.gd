@@ -10,18 +10,27 @@ static func merge(parts: Array[Dictionary]) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
+	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 	for part in parts:
 		var arrays: Array = (part["mesh"] as PrimitiveMesh).get_mesh_arrays()
 		var xf: Transform3D = part["transform"]
 		var c: Color = part["color"]
+		var tag := -1.0
+		if part.has("tag"):
+			tag = float(part["tag"])
 		var base := verts.size()
 		var pv: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var pn: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+		var puv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
 		for i in pv.size():
 			verts.append(xf * pv[i])
 			normals.append((xf.basis * pn[i]).normalized())
 			colors.append(c)
+			if tag >= 0.0:
+				uvs.append(Vector2(tag, 0.0))
+			else:
+				uvs.append(puv[i] if i < puv.size() else Vector2.ZERO)
 		var pi: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 		for idx in pi:
 			indices.append(base + idx)
@@ -30,6 +39,7 @@ static func merge(parts: Array[Dictionary]) -> ArrayMesh:
 	out[Mesh.ARRAY_VERTEX] = verts
 	out[Mesh.ARRAY_NORMAL] = normals
 	out[Mesh.ARRAY_COLOR] = colors
+	out[Mesh.ARRAY_TEX_UV] = uvs
 	out[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, out)

@@ -21,6 +21,7 @@ shape = SubResource("shape")
 
 [node name="Visual" type="Node3D" parent="."]
 script = ExtResource("2_visual")
+silhouette = 1
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("3_health")
