@@ -45,3 +45,12 @@ float noise3(vec3 p) {
 vec3 srgb_approx(vec3 c) {
 	return pow(max(c, vec3(0.0)), vec3(2.2));
 }
+
+// Keeps the part's tint and uses a tile only for cracks, grain and pits.
+vec3 detail_modulate(vec3 col, vec3 tex, float amount) {
+	float luma = dot(tex, vec3(0.299, 0.587, 0.114));
+	vec3 ratio = clamp(tex / max(luma, 0.05), vec3(0.0), vec3(1.65));
+	col *= mix(vec3(1.0), ratio, amount);
+	col *= mix(1.0, mix(0.8, 1.12, clamp(luma, 0.0, 1.0)), amount);
+	return col;
+}

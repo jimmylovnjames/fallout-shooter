@@ -16,6 +16,9 @@ static func merge(parts: Array[Dictionary]) -> ArrayMesh:
 		var arrays: Array = (part["mesh"] as PrimitiveMesh).get_mesh_arrays()
 		var xf: Transform3D = part["transform"]
 		var c: Color = part["color"]
+		var tag := -1.0
+		if part.has("tag"):
+			tag = float(part["tag"])
 		var base := verts.size()
 		var pv: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var pn: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
@@ -24,7 +27,10 @@ static func merge(parts: Array[Dictionary]) -> ArrayMesh:
 			verts.append(xf * pv[i])
 			normals.append((xf.basis * pn[i]).normalized())
 			colors.append(c)
-			uvs.append(puv[i] if i < puv.size() else Vector2.ZERO)
+			if tag >= 0.0:
+				uvs.append(Vector2(tag, 0.0))
+			else:
+				uvs.append(puv[i] if i < puv.size() else Vector2.ZERO)
 		var pi: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 		for idx in pi:
 			indices.append(base + idx)

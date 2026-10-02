@@ -16,9 +16,10 @@ static func player() -> ArrayMesh:
 		_box(Vector3(0.4, 0.08, 0.34), Vector3(0, 1.22, -0.02), Color(0.1, 0.09, 0.08, 0)),
 		_box(Vector3(0.14, 0.16, 0.2), Vector3(-0.14, 0.1, 0.02), Color(0.08, 0.07, 0.06, 0)),
 		_box(Vector3(0.14, 0.16, 0.2), Vector3(0.14, 0.1, 0.02), Color(0.08, 0.07, 0.06, 0)),
-		_box(Vector3(0.09, 0.11, 0.42), Vector3(0.42, 1.08, -0.42), Color(0.18, 0.07, 0.03, 0)),
-		_box(Vector3(0.05, 0.05, 0.28), Vector3(0.42, 1.12, -0.72), Color(0.28, 0.12, 0.04, 0)),
-		_box(Vector3(0.08, 0.16, 0.09), Vector3(0.42, 0.94, -0.26), Color(0.14, 0.06, 0.03, 0)),
+		_box(Vector3(0.1, 0.12, 0.28), Vector3(0.4, 1.06, -0.32), Color(0.16, 0.06, 0.03, 0)),
+		_cyl(0.035, 0.42, Vector3(0.4, 1.1, -0.62), Color(0.32, 0.14, 0.05, 0)),
+		_box(Vector3(0.07, 0.14, 0.08), Vector3(0.4, 0.96, -0.28), Color(0.1, 0.04, 0.02, 0)),
+		_box(Vector3(0.08, 0.16, 0.1), Vector3(0.4, 0.92, -0.2), Color(0.14, 0.06, 0.03, 0)),
 	]
 	return MeshMerge.merge(parts)
 
@@ -31,7 +32,8 @@ static func scavenger() -> ArrayMesh:
 		_box(Vector3(0.2, 0.06, 0.06), Vector3(0, 1.5, -0.24), Color(0.15, 0.82, 0.95, 0)),
 		_box(Vector3(0.5, 0.46, 0.3), Vector3(0, 1.12, 0.32), Color(0.45, 0.5, 0.52, 1)),
 		_box(Vector3(0.1, 0.34, 0.22), Vector3(-0.32, 1.28, 0.02), Color(0.55, 0.32, 0.12, 0)),
-		_box(Vector3(0.08, 0.08, 1.15), Vector3(0.02, 1.02, -0.62), Color(0.14, 0.13, 0.12, 0)),
+		_cyl(0.045, 1.05, Vector3(0.02, 1.04, -0.62), Color(0.12, 0.11, 0.1, 0)),
+		_box(Vector3(0.1, 0.12, 0.22), Vector3(0.02, 0.98, -0.16), Color(0.22, 0.16, 0.1, 0)),
 	]
 	return MeshMerge.merge(parts)
 
@@ -40,6 +42,17 @@ static func _box(size: Vector3, pos: Vector3, color: Color) -> Dictionary:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	return {"mesh": mesh, "transform": Transform3D(Basis(), pos), "color": color}
+
+
+static func _cyl(radius: float, length: float, pos: Vector3, color: Color) -> Dictionary:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = length
+	mesh.radial_segments = 6
+	# Cylinder points along +Y. Roll it so the barrel points down the aim axis (-Z).
+	var basis := Basis(Vector3.RIGHT, -PI * 0.5)
+	return {"mesh": mesh, "transform": Transform3D(basis, pos), "color": color}
 
 
 static func _sphere(radius: float, pos: Vector3, color: Color) -> Dictionary:

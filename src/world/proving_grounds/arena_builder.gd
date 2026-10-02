@@ -9,6 +9,12 @@ const _WALL_TONES: Array[Color] = [
 	Color(0.9, 0.28, 0.06),
 	Color(0.78, 0.42, 0.1),
 ]
+const _AWNING_TONES: Array[Color] = [
+	Color(0.98, 0.78, 0.08),
+	Color(0.05, 0.55, 0.62),
+	Color(0.86, 0.12, 0.1),
+	Color(0.18, 0.32, 0.86),
+]
 
 
 static func build(root: Node3D, rng: RandomNumberGenerator, half: float) -> void:
@@ -31,6 +37,8 @@ static func build(root: Node3D, rng: RandomNumberGenerator, half: float) -> void
 	# Building shells along both sides of the road. The road itself is painted on the ground.
 	var shells: Array[Transform3D] = []
 	var shell_colors := PackedColorArray()
+	var awnings: Array[Transform3D] = []
+	var awning_colors := PackedColorArray()
 	for side: int in [-1, 1]:
 		for i in 4:
 			var size := Vector3(rng.randf_range(5, 8), rng.randf_range(3, 7), rng.randf_range(5, 9))
@@ -43,7 +51,13 @@ static func build(root: Node3D, rng: RandomNumberGenerator, half: float) -> void
 			root.add_child(body)
 			shells.append(Transform3D(Basis().scaled(size), body.position))
 			shell_colors.append(_WALL_TONES[(i + (0 if side < 0 else 1)) % _WALL_TONES.size()])
+			var street := -1.0 if pos.x > 0.0 else 1.0
+			var awn_pos := Vector3(pos.x + street * (size.x * 0.5 + 0.48), size.y * 0.62, pos.z)
+			var depth := minf(size.z * 0.38, 2.3)
+			awnings.append(Transform3D(Basis().scaled(Vector3(1.05, 0.04, depth)), awn_pos))
+			awning_colors.append(_AWNING_TONES[(i + (0 if side < 0 else 2)) % _AWNING_TONES.size()])
 	root.add_child(GreyboxKit.batch_occluders(shells, shell_colors))
+	root.add_child(GreyboxKit.batch(BoxMesh.new(), awnings, awning_colors, GreyboxKit.Palette.ACCENT))
 
 	_crates(root, statics, rng)
 	_barrels(root, statics, rng)
@@ -62,6 +76,7 @@ static func build(root: Node3D, rng: RandomNumberGenerator, half: float) -> void
 		)
 	)
 	_horizon(root)
+	_street(root, statics)
 	var haze := HazeField.new()
 	haze.name = "HazeField"
 	root.add_child(haze)
@@ -194,3 +209,37 @@ static func _horizon(root: Node3D) -> void:
 		trees.append(Transform3D(basis, Vector3(cos(ang) * radius, 0.0, sin(ang) * radius)))
 		tree_colors.append(Color(0.4, 0.32, 0.22).lerp(Color(0.28, 0.22, 0.16), rng.randf()))
 	root.add_child(GreyboxKit.batch(PropMeshes.dead_tree(), trees, tree_colors, GreyboxKit.STYLE_BARK))
+
+
+## Wrecks and street lamps. Fixed layout so the scattered props above keep their seed.
+static func _street(root: Node3D, statics: StaticBody3D) -> void:
+	var wrecks: Array[Transform3D] = []
+	var wreck_colors := PackedColorArray()
+	var spots: Array[Vector3] = [Vector3(1.5, 0.0, -8.0), Vector3(-1.7, 0.0, 1.5), Vector3(1.2, 0.0, -20.0)]
+	var yaws: Array[float] = [0.35, 2.4, -0.5]
+	for i in spots.size():
+		var basis := Basis(Vector3.UP, yaws[i])
+		wrecks.append(Transform3D(basis, spots[i]))
+		wreck_colors.append(Color(0.85, 0.42, 0.12))
+		statics.add_child(
+			GreyboxKit.box_shape(Vector3(1.8, 1.1, 3.6), Transform3D(basis, spots[i] + Vector3(0, 0.55, 0)))
+		)
+	root.add_child(GreyboxKit.batch(PropMeshes.wreck(), wrecks, wreck_colors, GreyboxKit.Palette.RUST))
+
+	var posts: Array[Transform3D] = []
+	var post_colors := PackedColorArray()
+	for z: float in PackedFloat32Array([-18.0, -6.0, 6.0, 18.0]):
+		for x: float in PackedFloat32Array([-4.6, 4.6]):
+			var yaw := 0.0 if x < 0.0 else PI
+			var xf := Transform3D(Basis(Vector3.UP, yaw), Vector3(x, 0.0, z))
+			posts.append(xf)
+			post_colors.append(Color(0.12, 0.13, 0.15))
+			var lamp := OmniLight3D.new()
+			lamp.light_color = Color(1.0, 0.62, 0.22)
+			lamp.light_energy = 1.6
+			lamp.omni_range = 7.5
+			lamp.shadow_enabled = false
+			lamp.position = xf * Vector3(0.86, 3.02, 0)
+			root.add_child(lamp)
+	root.add_child(GreyboxKit.batch(PropMeshes.lamp_post(), posts, post_colors, GreyboxKit.Palette.DARK))
+	root.add_child(GreyboxKit.batch_emissive(PropMeshes.lamp_bulb(), posts, Color(1.0, 0.48, 0.08)))

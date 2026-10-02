@@ -18,6 +18,8 @@ uniform float metallic_amt : hint_range(0.0, 1.0) = 0.0;
 // 0 concrete, 1 rust, 2 sand, 3 wood, 4 paint, 5 dark metal, 7 rock, 8 bark.
 uniform int style = 0;
 uniform float deform_amt : hint_range(0.0, 1.0) = 0.0;
+uniform sampler2D rust_tex : source_color, repeat_enable, filter_linear_mipmap;
+uniform sampler2D wood_tex : source_color, repeat_enable, filter_linear_mipmap;
 
 varying vec3 local_pos;
 varying vec3 world_pos;
@@ -50,6 +52,8 @@ void fragment() {
 	col *= mix(0.84, 1.08, macro);
 
 	if (style_id == 1) {
+		vec3 rust_sample = texture(rust_tex, world_pos.xz * 0.85 + vec2(world_pos.y, 0.0)).rgb;
+		col = detail_modulate(col, rust_sample, 0.72);
 		rough = 0.58;
 		metal = 0.42;
 		float bands = abs(fract(local_pos.y * 3.2) - 0.5);
@@ -60,6 +64,8 @@ void fragment() {
 		float streak = noise2(vec2(atan(local_pos.x, local_pos.z) * 1.4, world_pos.y * 1.6));
 		col = mix(col, col * vec3(0.62, 0.32, 0.14), smoothstep(0.62, 0.9, streak) * 0.65);
 	} else if (style_id == 3) {
+		vec3 wood_sample = texture(wood_tex, local_pos.xz * 0.9 + vec2(0.0, local_pos.y * 1.4)).rgb;
+		col = detail_modulate(col, wood_sample, 0.66);
 		rough = 0.78;
 		metal = 0.0;
 		float seam = abs(fract(local_pos.y * 4.0) - 0.5);

@@ -9,6 +9,7 @@ uniform vec3 sand_lo : source_color = vec3(0.55, 0.22, 0.1);
 uniform vec3 asphalt : source_color = vec3(0.06, 0.07, 0.1);
 uniform float road_half_width = 3.05;
 uniform float road_half_length = 46.0;
+uniform sampler2D sand_tex : source_color, repeat_enable, filter_linear_mipmap;
 
 varying vec3 world_pos;
 varying float road_mask;
@@ -34,6 +35,8 @@ void fragment() {
 	sand = mix(sand, sand * vec3(0.7, 0.64, 0.56), pebble * 0.4);
 	float grit = noise2(world_pos.xz * 1.8);
 	sand *= mix(0.9, 1.06, grit);
+	vec3 sand_sample = texture(sand_tex, world_pos.xz * 0.14).rgb;
+	sand = detail_modulate(sand, sand_sample, 0.4);
 
 	vec3 tar = asphalt * mix(0.85, 1.15, noise2(world_pos.xz * 0.7));
 	float crack = smoothstep(0.78, 0.96, noise2(world_pos.xz * 1.15 + vec2(4.0, 1.0)));

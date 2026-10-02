@@ -17,6 +17,11 @@ const OUTLINE_SHADER := preload("res://src/shaders/outline_hull.gdshader")
 const OCCLUDER_SHADER := preload("res://src/shaders/world_occluder.gdshader")
 const SURFACE_SHADER := preload("res://src/shaders/world_surface.gdshader")
 const GROUND_SHADER := preload("res://src/shaders/ground.gdshader")
+const EMISSIVE_SHADER := preload("res://src/shaders/emissive.gdshader")
+const SAND_TEX: Texture2D = preload("res://assets/textures/sand.png")
+const PLASTER_TEX: Texture2D = preload("res://assets/textures/plaster.png")
+const RUST_TEX: Texture2D = preload("res://assets/textures/rust.png")
+const WOOD_TEX: Texture2D = preload("res://assets/textures/wood.png")
 ## world_surface.gdshader style ids that are not a Palette entry.
 const STYLE_ROCK := 7
 const STYLE_BARK := 8
@@ -44,7 +49,7 @@ static var _batch_material: ShaderMaterial
 static var _styled: Dictionary[String, ShaderMaterial] = {}
 static var _ground_mat: ShaderMaterial
 static var _occluder_material: ShaderMaterial
-static var _unit_box: BoxMesh
+static var _shell_mesh: ArrayMesh
 static var _rock_mesh: ArrayMesh
 
 
@@ -175,6 +180,8 @@ static func batch_material() -> ShaderMaterial:
 		_batch_material.set_shader_parameter(&"metallic_amt", 0.0)
 		_batch_material.set_shader_parameter(&"style", 0)
 		_batch_material.set_shader_parameter(&"deform_amt", 0.0)
+		_batch_material.set_shader_parameter(&"rust_tex", RUST_TEX)
+		_batch_material.set_shader_parameter(&"wood_tex", WOOD_TEX)
 	return _batch_material
 
 
@@ -182,6 +189,7 @@ static func occluder_material() -> ShaderMaterial:
 	if _occluder_material == null:
 		_occluder_material = ShaderMaterial.new()
 		_occluder_material.shader = OCCLUDER_SHADER
+		_occluder_material.set_shader_parameter(&"plaster_tex", PLASTER_TEX)
 	return _occluder_material
 
 
@@ -209,7 +217,7 @@ static func batch_occluders(transforms: Array[Transform3D], colors: PackedColorA
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = _unit_box_mesh()
+	mm.mesh = _ruin_shell()
 	mm.instance_count = transforms.size()
 	for i in transforms.size():
 		mm.set_instance_transform(i, transforms[i])
@@ -238,7 +246,7 @@ static func building(size: Vector3, pos: Vector3, tint: Color) -> StaticBody3D:
 	body.position = pos + Vector3(0, size.y * 0.5, 0)
 	body.add_child(box_shape(size, Transform3D()))
 	var mi := MeshInstance3D.new()
-	mi.mesh = _unit_box_mesh()
+	mi.mesh = _ruin_shell()
 	mi.scale = size
 	mi.material_override = occluder_material()
 	mi.set_instance_shader_parameter(&"tint", tint)
@@ -260,14 +268,32 @@ static func _ground_material() -> ShaderMaterial:
 	if _ground_mat == null:
 		_ground_mat = ShaderMaterial.new()
 		_ground_mat.shader = GROUND_SHADER
+		_ground_mat.set_shader_parameter(&"sand_tex", SAND_TEX)
 	return _ground_mat
 
 
-static func _unit_box_mesh() -> BoxMesh:
-	if _unit_box == null:
-		_unit_box = BoxMesh.new()
-		_unit_box.size = Vector3.ONE
-	return _unit_box
+## One unshaded MultiMesh for lamp bulbs. No shadow.
+static func batch_emissive(mesh: Mesh, transforms: Array[Transform3D], color: Color) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = transforms.size()
+	for i in transforms.size():
+		mm.set_instance_transform(i, transforms[i])
+	var mat := ShaderMaterial.new()
+	mat.shader = EMISSIVE_SHADER
+	mat.set_shader_parameter(&"color", color)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mmi
+
+
+static func _ruin_shell() -> ArrayMesh:
+	if _shell_mesh == null:
+		_shell_mesh = PropMeshes.building_shell()
+	return _shell_mesh
 
 
 ## Faceted pebble. Flat normals so per-instance deform reads as a rock, not a blob.
